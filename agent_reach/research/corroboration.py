@@ -6,6 +6,7 @@ import re
 from dataclasses import replace
 
 from .models import EvidenceItem
+from .policy import source_identity
 from .store import EvidenceStore
 
 _WS = re.compile(r"\s+")
@@ -16,7 +17,7 @@ def claim_key(text: str) -> str:
 
 
 def link_exact_claims(store: EvidenceStore) -> EvidenceStore:
-    """Link identical normalized claims across independent source channels.
+    """Link identical normalized claims across independent source identities.
 
     Semantic/LLM matching can be layered later, but the core remains deterministic.
     """
@@ -30,7 +31,7 @@ def link_exact_claims(store: EvidenceStore) -> EvidenceStore:
             corroborates = tuple(
                 other.evidence_id
                 for other in items
-                if other.evidence_id != item.evidence_id and other.source != item.source
+                if other.evidence_id != item.evidence_id\n                and source_identity(other) != source_identity(item)
             )
             linked.add(replace(item, corroborates=corroborates))
     return linked
