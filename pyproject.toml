@@ -39,6 +39,7 @@ dependencies = [
 
 [project.optional-dependencies]
 browser = ["playwright>=1.40"]
+mcp = ["mcp[cli]>=1.0"]
 cookies = ["browser-cookie3>=0.19"]
 all = ["playwright>=1.40", "mcp[cli]>=1.0", "browser-cookie3>=0.19"]
 dev = [
