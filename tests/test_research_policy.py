@@ -23,3 +23,23 @@ def test_policy_can_require_primary_source():
     )
     assert result.satisfied is True
     assert result.primary_sources == 1
+
+
+def test_two_urls_found_through_same_transport_count_as_two_publishers():
+    plan = ResearchPlan(topic="x", questions=(ResearchQuestion("q"),), minimum_independent_sources=2)
+    store = EvidenceStore([
+        EvidenceItem(source="exa", canonical_url="https://vendor.example/spec", claim="x"),
+        EvidenceItem(source="exa", canonical_url="https://lab.example/test", claim="x"),
+    ])
+    assert evaluate_policy(plan, store).satisfied is True
+
+
+def test_same_publisher_via_two_channels_counts_once():
+    plan = ResearchPlan(topic="x", questions=(ResearchQuestion("q"),), minimum_independent_sources=2)
+    store = EvidenceStore([
+        EvidenceItem(source="exa", canonical_url="https://vendor.example/spec", claim="x"),
+        EvidenceItem(source="web", canonical_url="https://vendor.example/news", claim="x"),
+    ])
+    result = evaluate_policy(plan, store)
+    assert result.satisfied is False
+    assert result.independent_sources == 1
