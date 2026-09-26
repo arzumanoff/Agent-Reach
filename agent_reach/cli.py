@@ -36,6 +36,7 @@ _SENSITIVE_CONFIG_KEYS = {
     "groq-key",
     "openai-key",
     "google-key",
+    "google-cx",
     "twitter-cookies",
     "xhs-cookies",
 }
