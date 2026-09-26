@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .models import EvidenceState
+from .policy import evaluate_policy
 from .runner import ResearchRun
 from .store import EvidenceStore
 from .verification import derive_state
@@ -28,7 +29,7 @@ def render_markdown(run: ResearchRun) -> str:
     for state in EvidenceState:
         lines.append(f"- {state.value}: {summary[state.value]}")
 
-    lines.extend(["", "## Evidence", ""])
+    policy = evaluate_policy(run.plan, run.store)\n    lines.extend(["", "## Coverage policy", ""])\n    lines.append(f"- Satisfied: {str(policy.satisfied).lower()}")\n    lines.append(f"- Independent sources: {policy.independent_sources}")\n    lines.append(f"- Primary sources: {policy.primary_sources}")\n    for reason in policy.reasons:\n        lines.append(f"- Gap: {reason}")\n\n    lines.extend(["", "## Evidence", ""])
     for item in run.store.all():
         state = derive_state(item, run.store).value
         title = item.title or item.source_id or item.source
