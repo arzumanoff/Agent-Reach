@@ -45,9 +45,12 @@ def run_document(payload: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agent-reach-research")
-    parser.add_argument("input", type=Path, help="Prepared research JSON document")
+    parser.add_argument("input", type=Path, nargs="?", help="Prepared research JSON document")
     parser.add_argument("-o", "--output", type=Path)
     args = parser.parse_args(argv)
+    if args.input is None:
+        parser.print_help()
+        return 0
     payload = json.loads(args.input.read_text(encoding="utf-8"))
     rendered = run_document(payload)
     if args.output:
