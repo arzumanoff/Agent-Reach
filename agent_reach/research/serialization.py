@@ -10,17 +10,17 @@ from .verification import derive_state
 
 
 def serialize_run(run: ResearchRun) -> dict[str, Any]:
+    evidence = []
+    for item in run.store.all():
+        payload = asdict(item)
+        payload["source_kind"] = item.source_kind.value
+        payload["state"] = derive_state(item, run.store).value
+        payload["evidence_id"] = item.evidence_id
+        evidence.append(payload)
+
     return {
         "schema_version": 1,
         "plan": asdict(run.plan),
         "coverage_gaps": list(run.coverage_gaps),
-        "evidence": [
-            {
-                **asdict(item),
-                "source_kind": item.source_kind.value,
-                "state": derive_state(item, run.store).value,
-                "evidence_id": item.evidence_id,
-            }
-            for item in run.store.all()
-        ],
+        "evidence": evidence,
     }
