@@ -34,6 +34,7 @@ _SENSITIVE_CONFIG_KEYS = {
     "github-token",
     "groq-key",
     "openai-key",
+    "google-key",
     "twitter-cookies",
     "xhs-cookies",
 }
@@ -107,7 +108,7 @@ def main():
     # ── configure ──
     p_conf = sub.add_parser("configure", help="Set a config value or auto-extract from browser")
     p_conf.add_argument("key", nargs="?", default=None,
-                        choices=["proxy", "github-token", "groq-key", "openai-key",
+                        choices=["proxy", "github-token", "groq-key", "openai-key", "google-key", "google-cx",
                                  "twitter-cookies", "youtube-cookies",
                                  "xhs-cookies"],
                         help="What to configure (omit if using --from-browser)")
@@ -1625,6 +1626,14 @@ def _parse_twitter_cookie_input(value: str):
                 auth_token = part.split("=", 1)[1]
             elif part.startswith("ct0="):
                 ct0 = part.split("=", 1)[1]
+    elif args.key == "google-key":
+        config.set("google_api_key", value)
+        print("Google Custom Search API key configured")
+
+    elif args.key == "google-cx":
+        config.set("google_cx", value)
+        print("Google Custom Search Engine ID configured")
+
     elif len(value.split()) == 2 and "=" not in value:
         # Two separate values: AUTH_TOKEN CT0.
         parts = value.split()
