@@ -1,6 +1,8 @@
 from agent_reach.research.models import EvidenceItem
 from agent_reach.research.planner import ResearchPlan, ResearchQuestion
 from agent_reach.research.runner import ResearchRun
+import json
+
 from agent_reach.research.serialization import serialize_run
 
 
@@ -12,3 +14,4 @@ def test_serialized_run_has_schema_and_stable_evidence_id():
     assert payload["schema_version"] == 1
     assert payload["evidence"][0]["evidence_id"] == item.evidence_id
     assert payload["evidence"][0]["state"] == "single-source"
+    json.dumps(payload)
