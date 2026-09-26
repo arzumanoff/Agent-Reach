@@ -29,19 +29,29 @@ def render_markdown(run: ResearchRun) -> str:
     for state in EvidenceState:
         lines.append(f"- {state.value}: {summary[state.value]}")
 
-    policy = evaluate_policy(run.plan, run.store)\n    lines.extend(["", "## Coverage policy", ""])\n    lines.append(f"- Satisfied: {str(policy.satisfied).lower()}")\n    lines.append(f"- Independent sources: {policy.independent_sources}")\n    lines.append(f"- Primary sources: {policy.primary_sources}")\n    for reason in policy.reasons:\n        lines.append(f"- Gap: {reason}")\n\n    lines.extend(["", "## Evidence", ""])
+    policy = evaluate_policy(run.plan, run.store)
+    lines.extend(["", "## Coverage policy", ""])
+    lines.append(f"- Satisfied: {str(policy.satisfied).lower()}")
+    lines.append(f"- Independent sources: {policy.independent_sources}")
+    lines.append(f"- Primary sources: {policy.primary_sources}")
+    for reason in policy.reasons:
+        lines.append(f"- Gap: {reason}")
+
+    lines.extend(["", "## Evidence", ""])
     for item in run.store.all():
         state = derive_state(item, run.store).value
         title = item.title or item.source_id or item.source
         provenance = item.canonical_url or item.source_id or "no stable locator"
-        lines.extend([
-            f"### [{state}] {title}",
-            "",
-            item.claim,
-            "",
-            f"Source: {item.source} | Locator: {provenance}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"### [{state}] {title}",
+                "",
+                item.claim,
+                "",
+                f"Source: {item.source} | Locator: {provenance}",
+                "",
+            ]
+        )
 
     lines.extend(["## Coverage gaps", ""])
     if run.coverage_gaps:
