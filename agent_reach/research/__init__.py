@@ -3,6 +3,7 @@
 from .artifacts import ArtifactKind, ArtifactRef
 from .corroboration import link_exact_claims
 from .models import EvidenceItem, EvidenceState, SourceKind
+from .orchestrator import execute_research
 from .planner import ResearchPlan, ResearchQuestion
 from .policy import PolicyResult, evaluate_policy
 from .runner import ResearchRun
@@ -20,5 +21,6 @@ __all__ = [
     "ResearchRun",
     "SourceKind",
     "evaluate_policy",
+    "execute_research",
     "link_exact_claims",
 ]
