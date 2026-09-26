@@ -29,15 +29,14 @@ class GoogleImagesChannel(Channel):
         return "warn", "Credentials configured; doctor does not spend image-search quota"
 
     def search(self, query: str, config, limit: int = 5) -> list[dict[str, Any]]:
-        key = config.get("google_api_key")
-        cx = config.get("google_cx")
+        key = config.get("google_api_key")\n        cx = config.get("google_cx")\n        if not isinstance(query, str) or not query.strip():\n            raise ValueError("Google image search query must not be empty")
         if not key or not cx:
             raise ValueError("Google image search is not configured")
         limit = max(1, min(int(limit), 10))
         params = urllib.parse.urlencode({
             "key": key,
             "cx": cx,
-            "q": query,
+            "q": query.strip(),
             "searchType": "image",
             "num": limit,
             "safe": "active",
