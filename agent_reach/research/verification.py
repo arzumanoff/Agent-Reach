@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .models import EvidenceItem, EvidenceState
+from .policy import source_identity
 from .store import EvidenceStore
 
 
@@ -17,10 +18,10 @@ def derive_state(item: EvidenceItem, store: EvidenceStore) -> EvidenceState:
         return EvidenceState.CONTRADICTED
 
     corroborating_sources = {
-        linked.source
+        source_identity(linked)
         for evidence_id in item.corroborates
         if (linked := store.get(evidence_id)) is not None
-        and linked.source != item.source
+        and source_identity(linked) != source_identity(item)
     }
     if len(corroborating_sources) >= 2:
         return EvidenceState.CONFIRMED
