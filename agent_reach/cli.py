@@ -31,6 +31,7 @@ _BOSS_AGENT_CLI_SOURCE = (
 _MAX_CONFIGURE_VALUE_CHARS = 1024 * 1024
 _SENSITIVE_CONFIG_KEYS = {
     "proxy",
+    "exa-key",
     "github-token",
     "groq-key",
     "openai-key",
@@ -108,7 +109,7 @@ def main():
     # ── configure ──
     p_conf = sub.add_parser("configure", help="Set a config value or auto-extract from browser")
     p_conf.add_argument("key", nargs="?", default=None,
-                        choices=["proxy", "github-token", "groq-key", "openai-key", "google-key", "google-cx",
+                        choices=["proxy", "exa-key", "github-token", "groq-key", "openai-key", "google-key", "google-cx",
                                  "twitter-cookies", "youtube-cookies",
                                  "xhs-cookies"],
                         help="What to configure (omit if using --from-browser)")
@@ -1572,6 +1573,10 @@ def _cmd_configure(args):
     elif args.key == "xhs-cookies":
         if not _configure_xhs_cookies(value):
             raise SystemExit(1)
+
+    elif args.key == "exa-key":
+        config.set("exa_api_key", value)
+        print("Exa API key configured (not live-probed)")
 
     elif args.key == "github-token":
         config.set("github_token", value)
