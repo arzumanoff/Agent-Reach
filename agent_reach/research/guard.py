@@ -13,6 +13,8 @@ _ALLOWED_RESEARCH_HOSTS = frozenset({
     "news.ycombinator.com",
     "github.com",
     "api.github.com",
+    "api.exa.ai",
+    "www.googleapis.com",
     "reddit.com",
     "www.reddit.com",
     "youtube.com",
