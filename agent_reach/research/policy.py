@@ -31,6 +31,14 @@ def source_identity(item: EvidenceItem) -> str:
     return "channel:" + item.source
 
 
+def _items_for_ids(store: EvidenceStore, ids: Set[str]) -> list[EvidenceItem]:
+    return [
+        item
+        for evidence_id in ids
+        if (item := store.get(evidence_id)) is not None
+    ]
+
+
 def evaluate_policy(
     plan: ResearchPlan,
     store: EvidenceStore,
@@ -44,10 +52,25 @@ def evaluate_policy(
     }
     reasons: list[str] = []
 
-    if len(identities) < plan.minimum_independent_sources:
-        reasons.append(
-            f"need {plan.minimum_independent_sources} independent sources; have {len(identities)}"
-        )
+    if question_evidence is None:
+        if len(identities) < plan.minimum_independent_sources:
+            reasons.append(
+                f"need {plan.minimum_independent_sources} independent sources; "
+                f"have {len(identities)}"
+            )
+    else:
+        for question in plan.questions:
+            items = _items_for_ids(
+                store,
+                question_evidence.get(question.text, set()),
+            )
+            question_identities = {source_identity(item) for item in items}
+            if len(question_identities) < plan.minimum_independent_sources:
+                reasons.append(
+                    f"question {question.text!r} needs "
+                    f"{plan.minimum_independent_sources} independent sources; "
+                    f"have {len(question_identities)}"
+                )
 
     required_primary_questions = [
         question for question in plan.questions if question.require_primary_source
@@ -57,13 +80,11 @@ def evaluate_policy(
             reasons.append("plan requires primary-source evidence but none was collected")
     else:
         for question in required_primary_questions:
-            ids = question_evidence.get(question.text, set())
-            has_primary = any(
-                (item := store.get(evidence_id)) is not None
-                and item.source_kind == SourceKind.PRIMARY
-                for evidence_id in ids
+            items = _items_for_ids(
+                store,
+                question_evidence.get(question.text, set()),
             )
-            if not has_primary:
+            if not any(item.source_kind == SourceKind.PRIMARY for item in items):
                 reasons.append(
                     f"question {question.text!r} requires primary-source evidence"
                 )
