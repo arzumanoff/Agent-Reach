@@ -69,3 +69,28 @@ def duckduckgo_search(
 ) -> SearchFn:
     ch = channel or DuckDuckGoSearchChannel()
     return lambda query, limit: ch.search(query, limit=limit)
+
+
+def build_live_sources(
+    config: Config,
+) -> tuple[dict[str, SearchFn], dict[str, SourceKind]]:
+    """Build the live search registry from locally available/configured backends."""
+    searches: dict[str, SearchFn] = {
+        "arxiv": arxiv_search(),
+        "hackernews": hackernews_search(),
+    }
+
+    if DuckDuckGoSearchChannel().check(config)[0] != "off":
+        searches["duckduckgo"] = duckduckgo_search()
+
+    if config.get("exa_api_key"):
+        searches["exa"] = exa_rest_search(config)
+
+    if config.get("google_api_key") and config.get("google_cx"):
+        searches["google_images"] = google_images_search(config)
+
+    source_kinds = {
+        source: DEFAULT_SOURCE_KINDS[source]
+        for source in searches
+    }
+    return searches, source_kinds
