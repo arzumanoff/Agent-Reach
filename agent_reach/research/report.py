@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from .models import EvidenceState, SourceKind
-from .policy import evaluate_policy, source_identity
+from .models import EvidenceState
+from .policy import evaluate_policy
 from .runner import ResearchRun
 from .store import EvidenceStore
 from .verification import derive_state
@@ -26,16 +26,14 @@ def render_markdown(run: ResearchRun) -> str:
         "",
         f"- Queries attempted: {run.attempted_queries}",
         f"- Queries with results: {run.successful_queries}",
-        f"- Results discarded: {run.discarded_results}",
+        f"- Discarded result records: {run.discarded_results}",
         "",
         "## Evidence summary",
         "",
         f"- Total: {summary['total']}",
     ]
-    for evidence_state in EvidenceState:
-        lines.append(
-            f"- {evidence_state.value}: {summary[evidence_state.value]}"
-        )
+    for state in EvidenceState:
+        lines.append(f"- {state.value}: {summary[state.value]}")
 
     policy = evaluate_policy(run.plan, run.store, run.question_evidence)
     lines.extend(["", "## Coverage policy", ""])
@@ -48,50 +46,23 @@ def render_markdown(run: ResearchRun) -> str:
     lines.extend(["", "## Question coverage", ""])
     for question in run.plan.questions:
         ids = run.question_evidence.get(question.text, set())
-        items = [
-            item
-            for evidence_id in sorted(ids)
-            if (item := run.store.get(evidence_id)) is not None
-        ]
-        identities = {source_identity(item) for item in items}
-        primary_count = sum(
-            item.source_kind == SourceKind.PRIMARY for item in items
-        )
-        lines.append(f"### {question.text}")
-        lines.append(f"- Evidence items: {len(items)}")
-        lines.append(f"- Independent source identities: {len(identities)}")
-        lines.append(f"- Primary evidence items: {primary_count}")
-        if question.require_primary_source:
-            lines.append("- Primary source required: yes")
-        lines.append("")
+        lines.append(f"- {question.text}: {len(ids)} evidence item(s)")
 
-    lines.extend(["## Evidence", ""])
+    lines.extend(["", "## Evidence", ""])
     for item in run.store.all():
-        item_state = derive_state(item, run.store).value
+        state = derive_state(item, run.store).value
         title = item.title or item.source_id or item.source
         provenance = item.canonical_url or item.source_id or "no stable locator"
         lines.extend(
             [
-                f"### [{item_state}] {title}",
+                f"### [{state}] {title}",
                 "",
                 item.claim,
                 "",
                 f"Source: {item.source} | Locator: {provenance}",
+                "",
             ]
         )
-        if item.corroborates:
-            lines.append(
-                "- Corroborates: " + ", ".join(sorted(item.corroborates))
-            )
-        if item.contradicts:
-            lines.append(
-                "- Contradicts: " + ", ".join(sorted(item.contradicts))
-            )
-        for artifact in item.artifact_refs:
-            lines.append(
-                f"- Artifact: {artifact.kind.value} | {artifact.locator}"
-            )
-        lines.append("")
 
     lines.extend(["## Coverage gaps", ""])
     if run.coverage_gaps:
