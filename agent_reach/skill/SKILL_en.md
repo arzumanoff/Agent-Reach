@@ -7,8 +7,8 @@ description: >
 
   Also MUST USE when user mentions any platform or shares any URL/link:
   Twitter/X, Reddit, Facebook, Instagram, YouTube, GitHub, Bilibili, XiaoHongShu,
-  TikTok, Hacker News, ArXiv, Google Images, Xiaoyuzhou Podcast,
-  LinkedIn/Boss直聘/jobs/recruiting, V2EX, Xueqiu (stocks), RSS.
+  TikTok, Hacker News, ArXiv, Google Images, Xiaoyuzhou Podcast, LinkedIn/Boss直聘/jobs/recruiting,
+  V2EX, Xueqiu (stocks), RSS.
 
   21 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
   backend serves each platform right now.
