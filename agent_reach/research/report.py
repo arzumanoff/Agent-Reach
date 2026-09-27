@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .models import EvidenceState
-from .policy import evaluate_policy
+from .policy import evaluate_policy, source_identity
 from .runner import ResearchRun
 from .store import EvidenceStore
 from .verification import derive_state
@@ -26,7 +26,7 @@ def render_markdown(run: ResearchRun) -> str:
         "",
         f"- Queries attempted: {run.attempted_queries}",
         f"- Queries with results: {run.successful_queries}",
-        f"- Discarded result records: {run.discarded_results}",
+        f"- Results discarded: {run.discarded_results}",
         "",
         "## Evidence summary",
         "",
@@ -46,7 +46,19 @@ def render_markdown(run: ResearchRun) -> str:
     lines.extend(["", "## Question coverage", ""])
     for question in run.plan.questions:
         ids = run.question_evidence.get(question.text, set())
-        lines.append(f"- {question.text}: {len(ids)} evidence item(s)")
+        items = [
+            item
+            for evidence_id in sorted(ids)
+            if (item := run.store.get(evidence_id)) is not None
+        ]
+        identities = {source_identity(item) for item in items}
+        lines.extend(
+            [
+                f"### {question.text}",
+                f"- Evidence items: {len(items)}",
+                f"- Independent source identities: {len(identities)}",
+            ]
+        )
 
     lines.extend(["", "## Evidence", ""])
     for item in run.store.all():
@@ -60,9 +72,13 @@ def render_markdown(run: ResearchRun) -> str:
                 item.claim,
                 "",
                 f"Source: {item.source} | Locator: {provenance}",
-                "",
             ]
         )
+        if item.corroborates:
+            lines.append("Corroborates: " + ", ".join(item.corroborates))
+        if item.contradicts:
+            lines.append("Contradicts: " + ", ".join(item.contradicts))
+        lines.append("")
 
     lines.extend(["## Coverage gaps", ""])
     if run.coverage_gaps:
