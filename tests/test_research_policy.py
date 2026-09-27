@@ -43,3 +43,14 @@ def test_same_publisher_via_two_channels_counts_once():
     result = evaluate_policy(plan, store)
     assert result.satisfied is False
     assert result.independent_sources == 1
+
+
+def test_two_records_from_same_channel_without_urls_count_once():
+    plan = ResearchPlan(topic="x", questions=(ResearchQuestion("q"),), minimum_independent_sources=2)
+    store = EvidenceStore([
+        EvidenceItem(source="reddit", source_id="thread:1", claim="x"),
+        EvidenceItem(source="reddit", source_id="thread:2", claim="x"),
+    ])
+    result = evaluate_policy(plan, store)
+    assert result.independent_sources == 1
+    assert result.satisfied is False
