@@ -56,3 +56,44 @@ def test_store_iteration_is_deterministic_by_evidence_id():
     b = EvidenceItem(source="web", source_id="a", claim="a")
     store = EvidenceStore([a, b])
     assert [item.evidence_id for item in store.all()] == sorted([a.evidence_id, b.evidence_id])
+
+
+def test_source_local_ids_are_namespaced():
+    a = EvidenceItem(source="github", source_id="1", claim="fact")
+    b = EvidenceItem(source="reddit", source_id="1", claim="fact")
+    assert a.evidence_id != b.evidence_id
+
+
+def test_store_merges_duplicate_page_evidence_deterministically():
+    from agent_reach.research.artifacts import ArtifactKind, ArtifactRef
+    from agent_reach.research.models import SourceKind
+
+    first = EvidenceItem(
+        source="exa",
+        canonical_url="https://example.test/page",
+        claim="same fact",
+        source_kind=SourceKind.SECONDARY,
+        metadata={"a": 1},
+    )
+    second = EvidenceItem(
+        source="web",
+        canonical_url="https://example.test/page",
+        claim="same fact",
+        source_kind=SourceKind.PRIMARY,
+        artifact_refs=(
+            ArtifactRef(
+                kind=ArtifactKind.DOCUMENT,
+                locator="https://example.test/page.pdf",
+                source="web",
+            ),
+        ),
+        metadata={"b": 2},
+    )
+    store = EvidenceStore([first, second])
+    assert len(store) == 1
+    merged = store.all()[0]
+    assert merged.source_kind == SourceKind.PRIMARY
+    assert merged.metadata["a"] == 1
+    assert merged.metadata["b"] == 2
+    assert merged.metadata["seen_sources"] == ["exa", "web"]
+    assert merged.artifact_refs[0].kind == ArtifactKind.DOCUMENT
