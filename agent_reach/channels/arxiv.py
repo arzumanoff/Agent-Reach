@@ -115,7 +115,7 @@ def _parse_entries(xml_text: str) -> List[dict]:
 
         title = ((title_elem.text if title_elem is not None else "") or "").strip().replace("\n", " ")
         summary = ((summary_elem.text if summary_elem is not None else "") or "").strip().replace("\n", " ")
-        arxiv_id = (id_elem.text if id_elem is not None else "").strip()
+        arxiv_id = ((id_elem.text if id_elem is not None else "") or "").strip()
         published = ((published_elem.text if published_elem is not None else "") or "").strip()
         link = link_elem.get("href", "") if link_elem is not None else ""
 

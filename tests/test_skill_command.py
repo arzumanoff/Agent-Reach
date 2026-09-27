@@ -26,6 +26,14 @@ class TestSkillCommand(unittest.TestCase):
         self.assertTrue(default_skill.strip())
         self.assertTrue(english_skill.strip())
 
+        research_reference = (
+            skill_dir.joinpath("references", "research.md")
+            .read_text(encoding="utf-8")
+        )
+        self.assertIn("Evidence states", research_reference)
+        self.assertIn("references/research.md", default_skill)
+        self.assertIn("references/research.md", english_skill)
+
     def test_exa_reference_uses_default_registered_tools_only(self):
         """Agent instructions must not call Exa tools disabled by default."""
         search_reference = (

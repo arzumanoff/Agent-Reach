@@ -2,8 +2,6 @@ name: Research Edition CI
 
 on:
   workflow_dispatch:
-  push:
-    branches: [research-edition]
   pull_request:
     branches: [main]
 

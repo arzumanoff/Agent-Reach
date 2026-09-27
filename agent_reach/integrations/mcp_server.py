@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-Agent Reach MCP Server — expose doctor/status as MCP tool.
+"""Agent Reach MCP server exposing read-only health/status."""
 
-Run: python -m agent_reach.integrations.mcp_server
-
-Agent Reach is an installer + doctor tool. For actual reading/searching,
-agents should call upstream tools directly (twitter-cli, yt-dlp, mcporter, etc.).
-"""
+from __future__ import annotations
 
 import asyncio
 import json
 import sys
 import threading
+from typing import Any
 
 from agent_reach.config import Config
 from agent_reach.core import AgentReach
@@ -20,7 +16,13 @@ from agent_reach.utils.text import scrub_url_credentials
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
-    from mcp.types import TextContent, Tool
+    from mcp.types import (
+        CallToolRequestParams,
+        CallToolResult,
+        ListToolsResult,
+        TextContent,
+        Tool,
+    )
 
     HAS_MCP = True
 except ImportError:
@@ -31,8 +33,7 @@ _doctor_lock = threading.Lock()
 
 
 def _doctor_report(eyes: AgentReach) -> str:
-    # Channels are shared singletons. Keep reports serial even when a cancelled
-    # MCP request leaves its synchronous probes running in the worker thread.
+    """Serialize doctor runs because channel registry objects are shared."""
     with _doctor_lock:
         return eyes.doctor_report()
 
@@ -45,51 +46,64 @@ def create_server():
             "https://github.com/Panniantong/agent-reach/archive/main.zip'",
             file=sys.stderr,
         )
-        sys.exit(1)
+        raise SystemExit(1)
 
-    server = Server("agent-reach")
     config = Config(read_only=True)
     eyes = AgentReach(config)
 
-    @server.list_tools()
-    async def list_tools():
-        return [
-            Tool(
-                name="get_status",
-                description="Get Agent Reach status: which channels are installed and active.",
-                inputSchema={"type": "object", "properties": {}},
-            ),
-        ]
+    async def list_tools(_ctx: Any, _params: Any) -> ListToolsResult:
+        return ListToolsResult(
+            tools=[
+                Tool(
+                    name="get_status",
+                    description=(
+                        "Get Agent Reach status: which channels are installed "
+                        "and active."
+                    ),
+                    input_schema={"type": "object", "properties": {}},
+                )
+            ]
+        )
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict):
+    async def call_tool(_ctx: Any, params: CallToolRequestParams) -> CallToolResult:
         try:
-            if name == "get_status":
+            if params.name == "get_status":
                 result = await asyncio.to_thread(_doctor_report, eyes)
             else:
-                result = f"Unknown tool: {name}"
+                result = f"Unknown tool: {params.name}"
 
-            text = (
+            rendered = (
                 json.dumps(result, ensure_ascii=False, indent=2)
                 if isinstance(result, (dict, list))
                 else str(result)
             )
-            return [TextContent(type="text", text=text)]
-        except Exception as e:
-            return [
-                TextContent(
-                    type="text",
-                    text=f"Error: {scrub_url_credentials(e)}",
-                )
-            ]
+            return CallToolResult(content=[TextContent(type="text", text=rendered)])
+        except Exception as exc:
+            return CallToolResult(
+                content=[
+                    TextContent(
+                        type="text",
+                        text=f"Error: {scrub_url_credentials(exc)}",
+                    )
+                ],
+                is_error=True,
+            )
 
-    return server
+    return Server(
+        "agent-reach",
+        on_list_tools=list_tools,
+        on_call_tool=call_tool,
+    )
 
 
 async def main():
     server = create_server()
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, server.create_initialization_options())
+        await server.run(
+            read_stream,
+            write_stream,
+            server.create_initialization_options(),
+        )
 
 
 if __name__ == "__main__":
