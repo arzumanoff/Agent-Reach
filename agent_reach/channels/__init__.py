@@ -10,6 +10,7 @@ from .arxiv import ArxivChannel
 from .base import Channel
 from .bilibili import BilibiliChannel
 from .boss import BossChannel
+from .duckduckgo import DuckDuckGoSearchChannel
 from .exa_search import ExaSearchChannel
 from .facebook import FacebookChannel
 from .github import GitHubChannel
@@ -29,6 +30,7 @@ from .xueqiu import XueqiuChannel
 from .youtube import YouTubeChannel
 
 ALL_CHANNELS: List[Channel] = [
+    DuckDuckGoSearchChannel(),
     ArxivChannel(),
     GitHubChannel(),
     TwitterChannel(),
