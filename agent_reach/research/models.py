@@ -58,7 +58,12 @@ class EvidenceItem:
     @property
     def evidence_id(self) -> str:
         """Stable ID based on source identity and normalized claim."""
-        identity = self.canonical_url or self.source_id or self.source
+        if self.canonical_url:
+            identity = self.canonical_url
+        elif self.source_id:
+            identity = f"{self.source}:{self.source_id}"
+        else:
+            identity = self.source
         normalized_identity = _normalize_identity(str(identity))
         normalized_claim = " ".join(self.claim.split()).casefold()
         raw = f"{normalized_identity}\n{normalized_claim}".encode("utf-8")
