@@ -7,8 +7,6 @@ from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
 from typing import Any
-
-from .artifacts import ArtifactRef
 from urllib.parse import urlsplit, urlunsplit
 
 from .artifacts import ArtifactRef
@@ -54,6 +52,14 @@ class EvidenceItem:
             raise ValueError("evidence source must not be empty")
         if not self.claim.strip():
             raise ValueError("evidence claim must not be empty")
+        if self.canonical_url:
+            try:
+                parsed = urlsplit(self.canonical_url)
+                _ = parsed.port
+            except ValueError as exc:
+                raise ValueError("canonical_url is invalid") from exc
+            if parsed.username is not None or parsed.password is not None:
+                raise ValueError("canonical_url must not contain credentials")
 
     @property
     def evidence_id(self) -> str:
@@ -74,13 +80,19 @@ def _normalize_identity(identity: str) -> str:
     value = " ".join(identity.split())
     try:
         parsed = urlsplit(value)
+        port = parsed.port
     except ValueError:
         return value.casefold()
+
     if parsed.scheme and parsed.hostname:
+        scheme = parsed.scheme.lower()
         host = parsed.hostname.lower().rstrip(".")
-        port = parsed.port
-        netloc = host if port in (None, 80, 443) else f"{host}:{port}"
+        default_port = (
+            (scheme == "http" and port == 80)
+            or (scheme == "https" and port == 443)
+        )
+        netloc = host if port is None or default_port else f"{host}:{port}"
         return urlunsplit(
-            (parsed.scheme.lower(), netloc, parsed.path, parsed.query, "")
+            (scheme, netloc, parsed.path, parsed.query, "")
         )
     return value.casefold()
