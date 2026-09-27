@@ -28,15 +28,16 @@ def github_repository_search(config: Config):
         if token:
             headers["Authorization"] = f"Bearer {token}"
 
+        params: dict[str, str | int] = {
+            "q": query.strip(),
+            "per_page": per_page,
+            "sort": "stars",
+            "order": "desc",
+        }
         try:
             response = requests.get(
                 _API,
-                params={
-                    "q": query.strip(),
-                    "per_page": per_page,
-                    "sort": "stars",
-                    "order": "desc",
-                },
+                params=params,
                 headers=headers,
                 timeout=_TIMEOUT,
             )
