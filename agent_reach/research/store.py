@@ -48,7 +48,7 @@ def _merge_items(left: EvidenceItem, right: EvidenceItem) -> EvidenceItem:
     metadata = dict(left.metadata)
     for key, value in right.metadata.items():
         metadata.setdefault(key, value)
-    prior_seen = set()
+    prior_seen: set[str] = set()
     for candidate in (left.metadata.get("seen_sources"), right.metadata.get("seen_sources")):
         if isinstance(candidate, list):
             prior_seen.update(str(value) for value in candidate)
