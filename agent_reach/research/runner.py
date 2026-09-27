@@ -18,7 +18,7 @@ SearchFn = Callable[[str, int], Sequence[Mapping[str, Any]]]
 class ResearchRun:
     plan: ResearchPlan
     store: EvidenceStore = field(default_factory=EvidenceStore)
-    coverage_gaps: list[str] = field(default_factory=list)
+    coverage_gaps: list[str] = field(default_factory=list)\n    attempted_queries: int = 0\n    successful_queries: int = 0
 
     def collect(
         self,
@@ -32,15 +32,12 @@ class ResearchRun:
                 if search is None:
                     self.coverage_gaps.append(f"{source}: no search adapter")
                     continue
-                try:
-                    results = search(question.text, self.plan.max_results_per_source)
+                self.attempted_queries += 1\n                try:\n                    results = search(question.text, self.plan.max_results_per_source)
                 except Exception as exc:
                     self.coverage_gaps.append(f"{source}: {type(exc).__name__}")
                     continue
-                if not results:
-                    self.coverage_gaps.append(f"{source}: no results for {question.text!r}")
-                    continue
-                for result in results:
+                if not results:\n                    self.coverage_gaps.append(f"{source}: no results for {question.text!r}")
+                    continue\n                self.successful_queries += 1\n                for result in results:
                     self.store.add(
                         evidence_from_result(
                             source,
