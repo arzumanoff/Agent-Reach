@@ -11,7 +11,16 @@ from agent_reach.channels.google_images import GoogleImagesChannel
 from agent_reach.channels.hackernews import HackerNewsChannel
 from agent_reach.config import Config
 
+from .models import SourceKind
 from .runner import SearchFn
+
+DEFAULT_SOURCE_KINDS = {
+    "arxiv": SourceKind.PRIMARY,
+    "hackernews": SourceKind.COMMUNITY,
+    "duckduckgo": SourceKind.SECONDARY,
+    "exa": SourceKind.SECONDARY,
+    "google_images": SourceKind.SECONDARY,
+}
 
 
 def arxiv_search(channel: ArxivChannel | None = None) -> SearchFn:
