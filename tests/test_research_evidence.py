@@ -49,3 +49,10 @@ def test_url_path_case_remains_significant():
     a = EvidenceItem(source="web", canonical_url="https://example.test/A", claim="Fact")
     b = EvidenceItem(source="web", canonical_url="https://example.test/a", claim="Fact")
     assert a.evidence_id != b.evidence_id
+
+
+def test_store_iteration_is_deterministic_by_evidence_id():
+    a = EvidenceItem(source="web", source_id="z", claim="z")
+    b = EvidenceItem(source="web", source_id="a", claim="a")
+    store = EvidenceStore([a, b])
+    assert [item.evidence_id for item in store.all()] == sorted([a.evidence_id, b.evidence_id])
