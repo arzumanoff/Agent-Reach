@@ -165,3 +165,54 @@ def test_deserialize_rejects_unknown_artifact_kind():
     }
     with pytest.raises(ValueError, match="invalid kind"):
         deserialize_run(payload)
+
+
+def test_artifact_round_trip_is_json_safe():
+    from agent_reach.research.artifacts import ArtifactKind, ArtifactRef
+    from agent_reach.research.serialization import deserialize_run
+
+    run = ResearchRun(
+        ResearchPlan(
+            topic="image",
+            questions=(ResearchQuestion("pcb", ("google_images",)),),
+            minimum_independent_sources=1,
+        )
+    )
+    item = EvidenceItem(
+        source="google_images",
+        canonical_url="https://vendor.example/board",
+        claim="PCB photo",
+        artifact_refs=(
+            ArtifactRef(
+                kind=ArtifactKind.IMAGE,
+                locator="https://images.example/pcb.jpg",
+                source="google_images",
+                description="PCB",
+            ),
+        ),
+    )
+    evidence_id = run.store.add(item)
+    run.question_evidence["pcb"] = {evidence_id}
+
+    payload = json.loads(json.dumps(serialize_run(run)))
+    replayed = deserialize_run(payload)
+    artifact = replayed.store.all()[0].artifact_refs[0]
+
+    assert artifact.kind == ArtifactKind.IMAGE
+    assert artifact.locator == "https://images.example/pcb.jpg"
+
+
+def test_deserialize_rejects_tampered_evidence_id():
+    import pytest
+
+    from agent_reach.research.serialization import deserialize_run
+
+    run = ResearchRun(
+        ResearchPlan(topic="x", questions=(ResearchQuestion("q"),))
+    )
+    run.store.add(EvidenceItem(source="web", source_id="1", claim="fact"))
+    payload = json.loads(json.dumps(serialize_run(run)))
+    payload["evidence"][0]["evidence_id"] = "tampered"
+
+    with pytest.raises(ValueError, match="evidence_id"):
+        deserialize_run(payload)
