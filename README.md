@@ -25,6 +25,27 @@
 
 ---
 
+## 🧪 Research Edition
+
+你正在查看 **`research-edition`** 分支。它在 upstream Agent-Reach 之上增加 evidence-first 深度调研能力：
+
+- ResearchPlan → 多源收集 → Evidence Graph → 交叉验证/矛盾 → coverage policy → 报告；
+- Hacker News、ArXiv、DuckDuckGo、TikTok、Google Images、Exa REST；
+- typed image/video/code/document/thread artifacts；
+- 可 replay 的 JSON research run；
+- Windows/Codex 优先的修复和 CI quality gate；
+- 网络内容一律视为不可信数据，不当成 Agent 指令执行。
+
+安装当前分支：
+
+```bash
+python -m pip install --upgrade "https://github.com/arzumanoff/Agent-Reach/archive/refs/heads/research-edition.zip"
+```
+
+完整说明：**[docs/research-edition.md](docs/research-edition.md)**
+
+---
+
 ## ❤️赞助商
 
 > [想出现在这里？](mailto:pnt01@foxmail.com)

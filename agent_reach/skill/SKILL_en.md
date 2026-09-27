@@ -7,22 +7,23 @@ description: >
 
   Also MUST USE when user mentions any platform or shares any URL/link:
   Twitter/X, Reddit, Facebook, Instagram, YouTube, GitHub, Bilibili, XiaoHongShu,
-  Xiaoyuzhou Podcast, LinkedIn/Boss直聘/jobs/recruiting, V2EX, Xueqiu (stocks), RSS.
+  TikTok, Hacker News, ArXiv, Google Images, Xiaoyuzhou Podcast, LinkedIn/Boss直聘/jobs/recruiting,
+  V2EX, Xueqiu (stocks), RSS.
 
-  16 platforms, multi-backend routing (OpenCLI / per-platform CLIs / APIs).
-  Zero config for 6 channels. Run `agent-reach doctor --json` to see which
+  21 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
   backend serves each platform right now.
 
-  NOT for: writing reports/analysis/translation (this skill only FETCHES
-  internet content); posting/commenting/liking (write operations); platforms
-  that already have a dedicated skill installed (prefer that skill).
+  NOT for: purely offline writing/translation tasks unrelated to internet retrieval;
+  posting/commenting/liking (write operations); platforms that already have a dedicated
+  skill installed (prefer that skill). Deep research may include evidence synthesis,
+  cross-checking, and report output.
 metadata:
   homepage: https://github.com/Panniantong/Agent-Reach
 ---
 
 # Agent Reach — internet capability router
 
-16 platforms, multiple backends each. **When this skill exists, use it for
+21 channels, multiple backends. **When this skill exists, use it for
 these platforms — do not invent your own approach.**
 
 ## Standing rules (apply for the whole session)
@@ -36,9 +37,7 @@ these platforms — do not invent your own approach.**
    before starting.
 3. **On failure, follow the retry chains in references/** — never guess
    commands.
-4. **For broad research tasks**: combine platforms (Exa for web search +
-   Twitter/Reddit for discussions + XiaoHongShu/Bilibili for Chinese
-   perspectives), collect in parallel, then synthesize.
+4. **For broad research tasks**: read `references/research.md` first. Plan concrete questions, preserve provenance, record coverage gaps, then collect across independent source identities and synthesize.
 5. **Watch versions for the user**: after finishing a substantial
    multi-platform task, run `agent-reach check-update` (fast, one API call).
    If a new version exists, append one line to your wrap-up: "Agent Reach
@@ -50,8 +49,9 @@ these platforms — do not invent your own approach.**
 
 | User intent | Category | Details |
 |---------|------|---------|
-| Web / code search | search | [references/search.md](references/search.md) |
-| XiaoHongShu / Twitter / Bilibili / V2EX / Reddit / Facebook / Instagram | social | [references/social.md](references/social.md) |
+| Multi-source deep research / evidence cross-checking | research | [references/research.md](references/research.md) |
+| Web / code / academic / image search (Exa/DDG/HN/ArXiv/Google Images) | search | [references/search.md](references/search.md) |
+| XiaoHongShu / Twitter / Bilibili / V2EX / Reddit / Facebook / Instagram / TikTok | social | [references/social.md](references/social.md) |
 | Jobs / LinkedIn | career | [references/career.md](references/career.md) |
 | GitHub / code | dev | [references/dev.md](references/dev.md) |
 | Web pages / articles / RSS | web | [references/web.md](references/web.md) |
@@ -68,7 +68,7 @@ mcporter call exa.web_search_exa query="query" numResults=5
 curl -s "https://r.jina.ai/URL"
 
 # GitHub search
-gh search repos "query" --sort stars --limit 10
+gh search repos query --sort stars --limit 10
 
 # YouTube subtitles (never use yt-dlp for Bilibili; retry chain in video.md)
 yt-dlp --write-sub --write-auto-sub --skip-download -o "/tmp/%(id)s" "URL"
@@ -78,6 +78,15 @@ curl -s "https://www.v2ex.com/api/topics/hot.json" -H "User-Agent: agent-reach/1
 
 # Bilibili search (bili-cli, no login needed)
 bili search "query" --type video -n 5
+
+# Hacker News search (Algolia, no key)
+curl -s "https://hn.algolia.com/api/v1/search?query=QUERY&tags=story&hitsPerPage=5"
+
+# ArXiv paper search (no key)
+curl -s "https://export.arxiv.org/api/query?search_query=all:QUERY&start=0&max_results=5"
+
+# Read one public TikTok video (search/profile needs OpenCLI)
+yt-dlp --dump-single-json "TIKTOK_URL"
 ```
 
 ## Login-backed platforms (pick by doctor's active_backend)
@@ -158,8 +167,9 @@ Read the matching file when you need specifics (commands above cover the
 common cases; references hold per-backend command groups, caveats, retry
 chains — note: reference docs are written in Chinese, commands are universal):
 
-- [Search](references/search.md) — Exa AI search
-- [Social](references/social.md) — XiaoHongShu, Twitter, Bilibili, V2EX, Reddit, Facebook, Instagram (multi-backend/login-backed groups)
+- [Deep research](references/research.md) — evidence-first multi-source research, corroboration, coverage policy
+- [Search](references/search.md) — Exa, DuckDuckGo, Hacker News, ArXiv, Google Images
+- [Social](references/social.md) — XiaoHongShu, Twitter, Bilibili, V2EX, Reddit, Facebook, Instagram, TikTok (multi-backend/login-backed groups)
 - [Career](references/career.md) — LinkedIn
 - [Dev](references/dev.md) — GitHub CLI
 - [Web](references/web.md) — Jina Reader, RSS

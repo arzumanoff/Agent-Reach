@@ -14,6 +14,8 @@ reddit (#364), xueqiu (#365) and v2ex (#366).
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
+
 from agent_reach.channels import youtube as yt
 from agent_reach.channels.youtube import YouTubeChannel, _has_js_runtime_config
 from agent_reach.probe import ProbeResult
@@ -240,3 +242,20 @@ def test_check_ok_flags_missing_ffprobe_for_transcription():
     assert status == "ok"
     assert "ffprobe" in message
     assert "可转写音频" not in message
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ("# --js-runtimes node\n", False),
+        ("--no-mtime # --js-runtimes node\n", False),
+        ("--js-runtimes=node\n", True),
+        ("--js-runtimes node # enabled\n", True),
+        ("\ufeff--js-runtimes node\n", True),
+        ("\ufeff# --js-runtimes node\n", False),
+    ],
+)
+def test_has_js_runtime_config_ignores_comments(tmp_path, payload, expected):
+    cfg = tmp_path / "config"
+    cfg.write_text(payload, encoding="utf-8")
+    assert _has_js_runtime_config(cfg) is expected

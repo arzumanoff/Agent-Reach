@@ -299,3 +299,21 @@ opencli instagram saved --limit 20 -f yaml
 ```
 
 > 要求 Chrome 打开且装了 OpenCLI 扩展，并已登录 instagram.com。`instagram search` 是用户搜索；读帖子需要先确定 username，再用 `instagram user USERNAME`。若出现 429 / login required，先让用户在 Chrome 里重新登录并降低频率。
+
+
+## TikTok（双后端）
+
+TikTok 单条公开视频优先走 yt-dlp；搜索、主页、following 等需要 OpenCLI 和用户已有浏览器登录态。
+
+```bash
+# 单条公开视频信息/字幕（零配置，偶发 JS challenge 时重试或换网络）
+yt-dlp --dump-single-json "TIKTOK_URL"
+
+# 搜索/主页（桌面，需 OpenCLI + 已登录浏览器）
+opencli tiktok search "query" -f yaml
+opencli tiktok profile USERNAME -f yaml
+```
+
+> TikTok 的反爬挑战是平台行为，不要高频自动重试。公开视频提取失败时先重试一次；
+> 仍失败再切换到 OpenCLI 或换网络。不要把视频作者的口述自动当成 primary evidence；
+> Research Edition 应区分「画面实际展示」与「作者声称」。
