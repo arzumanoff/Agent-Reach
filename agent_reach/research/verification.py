@@ -1,14 +1,10 @@
-"""Deterministic evidence-state derivation.
-
-This module intentionally does not ask an LLM to invent a probability. It derives
-an evidence state from explicit corroboration/contradiction links and source diversity.
-"""
+"""Deterministic evidence-state derivation."""
 
 from __future__ import annotations
 
 from dataclasses import replace
 
-from .models import EvidenceItem, EvidenceState
+from .models import EvidenceItem, EvidenceState, SourceKind
 from .policy import source_identity
 from .store import EvidenceStore
 
@@ -17,13 +13,20 @@ def derive_state(item: EvidenceItem, store: EvidenceStore) -> EvidenceState:
     if item.contradicts:
         return EvidenceState.CONTRADICTED
 
-    corroborating_sources = {
-        source_identity(linked)
+    linked_items = [
+        linked
         for evidence_id in item.corroborates
         if (linked := store.get(evidence_id)) is not None
         and source_identity(linked) != source_identity(item)
-    }
-    if len(corroborating_sources) >= 2:
+    ]
+    corroborating_sources = {source_identity(linked) for linked in linked_items}
+
+    # "Confirmed" is intentionally conservative: diversity alone is not enough.
+    # At least one item in the evidence cluster must be primary evidence.
+    has_primary = item.source_kind == SourceKind.PRIMARY or any(
+        linked.source_kind == SourceKind.PRIMARY for linked in linked_items
+    )
+    if len(corroborating_sources) >= 2 and has_primary:
         return EvidenceState.CONFIRMED
     if corroborating_sources:
         return EvidenceState.CORROBORATED
