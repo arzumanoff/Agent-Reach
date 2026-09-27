@@ -80,3 +80,88 @@ def test_artifact_survives_serialization_round_trip():
     artifact = restored.store.all()[0].artifact_refs[0]
     assert artifact.kind == ArtifactKind.IMAGE
     assert artifact.locator == "https://img.example/pcb.jpg"
+
+
+def test_deserialize_rejects_unknown_question_evidence_id():
+    import pytest
+    from agent_reach.research.serialization import deserialize_run
+
+    payload = {
+        "schema_version": 1,
+        "plan": {
+            "topic": "x",
+            "questions": [{"text": "q", "preferred_sources": []}],
+            "max_results_per_source": 10,
+            "minimum_independent_sources": 1,
+            "notes": [],
+        },
+        "coverage_gaps": [],
+        "attempted_queries": 0,
+        "successful_queries": 0,
+        "discarded_results": 0,
+        "question_evidence": {"q": ["missing"]},
+        "evidence": [],
+    }
+    with pytest.raises(ValueError, match="unknown evidence"):
+        deserialize_run(payload)
+
+
+def test_deserialize_rejects_impossible_query_metrics():
+    import pytest
+    from agent_reach.research.serialization import deserialize_run
+
+    payload = {
+        "schema_version": 1,
+        "plan": {
+            "topic": "x",
+            "questions": [{"text": "q", "preferred_sources": []}],
+            "max_results_per_source": 10,
+            "minimum_independent_sources": 1,
+            "notes": [],
+        },
+        "coverage_gaps": [],
+        "attempted_queries": 1,
+        "successful_queries": 2,
+        "discarded_results": 0,
+        "question_evidence": {},
+        "evidence": [],
+    }
+    with pytest.raises(ValueError, match="cannot exceed"):
+        deserialize_run(payload)
+
+
+def test_deserialize_rejects_unknown_artifact_kind():
+    import pytest
+    from agent_reach.research.serialization import deserialize_run
+
+    payload = {
+        "schema_version": 1,
+        "plan": {
+            "topic": "x",
+            "questions": [{"text": "q", "preferred_sources": []}],
+            "max_results_per_source": 10,
+            "minimum_independent_sources": 1,
+            "notes": [],
+        },
+        "coverage_gaps": [],
+        "attempted_queries": 0,
+        "successful_queries": 0,
+        "discarded_results": 0,
+        "question_evidence": {},
+        "evidence": [{
+            "source": "web",
+            "claim": "claim",
+            "source_kind": "secondary",
+            "state": "single-source",
+            "artifact_refs": [{
+                "kind": "mystery",
+                "locator": "https://example.test/a",
+                "source": "web",
+            }],
+            "corroborates": [],
+            "contradicts": [],
+            "metadata": {},
+        }],
+    }
+    with pytest.raises(ValueError, match="invalid kind"):
+        deserialize_run(payload)
