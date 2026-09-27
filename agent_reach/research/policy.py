@@ -10,6 +10,16 @@ from .models import EvidenceItem, SourceKind
 from .planner import ResearchPlan
 from .store import EvidenceStore
 
+_PUBLISHER_HOST_ALIASES = {
+    "export.arxiv.org": "arxiv.org",
+    "api.github.com": "github.com",
+    "www.github.com": "github.com",
+    "www.reddit.com": "reddit.com",
+    "old.reddit.com": "reddit.com",
+    "www.youtube.com": "youtube.com",
+    "m.youtube.com": "youtube.com",
+}
+
 
 @dataclass(frozen=True)
 class PolicyResult:
@@ -19,29 +29,23 @@ class PolicyResult:
     reasons: tuple[str, ...]
 
 
+def _publisher_host(host: str) -> str:
+    normalized = host.lower().rstrip(".")
+    if normalized.startswith("www."):
+        normalized = normalized[4:]
+    return _PUBLISHER_HOST_ALIASES.get(normalized, normalized)
+
+
 def source_identity(item: EvidenceItem) -> str:
     """Best available identity for conservative independence counting."""
-    publisher_id = item.metadata.get("publisher_id")
-    if isinstance(publisher_id, str) and publisher_id.strip():
-        return "publisher:" + publisher_id.strip().casefold()
     if item.canonical_url:
         try:
             host = (urlsplit(item.canonical_url).hostname or "").lower().rstrip(".")
         except ValueError:
             host = ""
         if host:
-            if host.startswith("www."):
-                host = host[4:]
-            return "host:" + host
+            return "host:" + _publisher_host(host)
     return "channel:" + item.source
-
-
-def _items_for_ids(store: EvidenceStore, ids: Set[str]) -> list[EvidenceItem]:
-    return [
-        item
-        for evidence_id in ids
-        if (item := store.get(evidence_id)) is not None
-    ]
 
 
 def evaluate_policy(
@@ -57,25 +61,10 @@ def evaluate_policy(
     }
     reasons: list[str] = []
 
-    if question_evidence is None:
-        if len(identities) < plan.minimum_independent_sources:
-            reasons.append(
-                f"need {plan.minimum_independent_sources} independent sources; "
-                f"have {len(identities)}"
-            )
-    else:
-        for question in plan.questions:
-            items = _items_for_ids(
-                store,
-                question_evidence.get(question.text, set()),
-            )
-            question_identities = {source_identity(item) for item in items}
-            if len(question_identities) < plan.minimum_independent_sources:
-                reasons.append(
-                    f"question {question.text!r} needs "
-                    f"{plan.minimum_independent_sources} independent sources; "
-                    f"have {len(question_identities)}"
-                )
+    if len(identities) < plan.minimum_independent_sources:
+        reasons.append(
+            f"need {plan.minimum_independent_sources} independent sources; have {len(identities)}"
+        )
 
     required_primary_questions = [
         question for question in plan.questions if question.require_primary_source
@@ -85,11 +74,13 @@ def evaluate_policy(
             reasons.append("plan requires primary-source evidence but none was collected")
     else:
         for question in required_primary_questions:
-            items = _items_for_ids(
-                store,
-                question_evidence.get(question.text, set()),
+            ids = question_evidence.get(question.text, set())
+            has_primary = any(
+                (item := store.get(evidence_id)) is not None
+                and item.source_kind == SourceKind.PRIMARY
+                for evidence_id in ids
             )
-            if not any(item.source_kind == SourceKind.PRIMARY for item in items):
+            if not has_primary:
                 reasons.append(
                     f"question {question.text!r} requires primary-source evidence"
                 )
