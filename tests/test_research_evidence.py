@@ -31,3 +31,15 @@ def test_store_groups_sources():
     grouped = store.by_source()
     assert len(grouped["github"]) == 2
     assert len(grouped["reddit"]) == 1
+
+
+def test_empty_claim_is_rejected():
+    import pytest
+    with pytest.raises(ValueError):
+        EvidenceItem(source="web", claim="   ")
+
+
+def test_identity_normalization_keeps_id_stable():
+    a = EvidenceItem(source="web", canonical_url="HTTPS://EXAMPLE.TEST/A", claim="Fact")
+    b = EvidenceItem(source="web", canonical_url="https://example.test/a", claim=" fact ")
+    assert a.evidence_id == b.evidence_id
