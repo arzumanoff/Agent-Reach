@@ -37,7 +37,7 @@ def render_markdown(run: ResearchRun) -> str:
             f"- {evidence_state.value}: {summary[evidence_state.value]}"
         )
 
-    policy = evaluate_policy(run.plan, run.store)
+    policy = evaluate_policy(run.plan, run.store, run.question_evidence)
     lines.extend(["", "## Coverage policy", ""])
     lines.append(f"- Satisfied: {str(policy.satisfied).lower()}")
     lines.append(f"- Independent sources: {policy.independent_sources}")
