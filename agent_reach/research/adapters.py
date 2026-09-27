@@ -21,7 +21,11 @@ def evidence_from_result(
     title = _first(result, "title")
     author = _author(result)
     published = _first(result, "published", "publishedDate", "created_at", "time")
-    text = claim or _claim_text(result)\n    if not str(text).strip():\n        raise ValueError(f"{source} result contains no usable claim text")\n\n    return EvidenceItem(
+    text = claim or _claim_text(result)
+    if not str(text).strip():
+        raise ValueError(f"{source} result contains no usable claim text")
+
+    return EvidenceItem(
         source=source,
         claim=str(text),
         canonical_url=str(canonical_url) if canonical_url else None,
@@ -44,7 +48,8 @@ def _claim_text(result: Mapping[str, Any]) -> str:
         clean = [str(value) for value in highlights if value]
         if clean:
             return " ".join(clean)
-    title = result.get("title")\n    return str(title) if title else ""
+    title = result.get("title")
+    return str(title) if title else ""
 
 
 def _first(result: Mapping[str, Any], *keys: str) -> Any:
