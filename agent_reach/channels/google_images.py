@@ -29,18 +29,24 @@ class GoogleImagesChannel(Channel):
         return "warn", "Credentials configured; doctor does not spend image-search quota"
 
     def search(self, query: str, config, limit: int = 5) -> list[dict[str, Any]]:
-        key = config.get("google_api_key")\n        cx = config.get("google_cx")\n        if not isinstance(query, str) or not query.strip():\n            raise ValueError("Google image search query must not be empty")
+        key = config.get("google_api_key")
+        cx = config.get("google_cx")
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("Google image search query must not be empty")
         if not key or not cx:
             raise ValueError("Google image search is not configured")
+
         limit = max(1, min(int(limit), 10))
-        params = urllib.parse.urlencode({
-            "key": key,
-            "cx": cx,
-            "q": query.strip(),
-            "searchType": "image",
-            "num": limit,
-            "safe": "active",
-        })
+        params = urllib.parse.urlencode(
+            {
+                "key": key,
+                "cx": cx,
+                "q": query.strip(),
+                "searchType": "image",
+                "num": limit,
+                "safe": "active",
+            }
+        )
         request = urllib.request.Request(
             _API + "?" + params,
             headers={"User-Agent": "agent-reach/1.0"},
@@ -49,15 +55,32 @@ class GoogleImagesChannel(Channel):
             raw = response.read(_MAX_BYTES + 1)
         if len(raw) > _MAX_BYTES:
             raise ValueError("Google image response exceeds safety limit")
-        data = json.loads(raw.decode("utf-8"))
-        return [
-            {
-                "title": item.get("title", ""),
-                "url": item.get("link", ""),
-                "context_url": (item.get("image") or {}).get("contextLink", ""),
-                "mime": item.get("mime", ""),
-                "width": (item.get("image") or {}).get("width"),
-                "height": (item.get("image") or {}).get("height"),
-            }
-            for item in (data.get("items") or [])[:limit]
-        ]
+
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("Google image search returned invalid JSON") from exc
+        if not isinstance(data, dict):
+            raise ValueError("Google image search returned a non-object response")
+
+        items = data.get("items", [])
+        if not isinstance(items, list):
+            raise ValueError("Google image search returned invalid items")
+
+        results: list[dict[str, Any]] = []
+        for item in items[:limit]:
+            if not isinstance(item, dict):
+                continue
+            image = item.get("image")
+            image_data = image if isinstance(image, dict) else {}
+            results.append(
+                {
+                    "title": item.get("title", ""),
+                    "url": item.get("link", ""),
+                    "context_url": image_data.get("contextLink", ""),
+                    "mime": item.get("mime", ""),
+                    "width": image_data.get("width"),
+                    "height": image_data.get("height"),
+                }
+            )
+        return results
