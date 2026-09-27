@@ -1,6 +1,10 @@
 import json
 
-from agent_reach.research.models import EvidenceItem
+import pytest
+
+from agent_reach.research.artifacts import ArtifactKind, ArtifactRef
+from agent_reach.research.cli import run_document
+from agent_reach.research.models import EvidenceItem, SourceKind
 from agent_reach.research.planner import ResearchPlan, ResearchQuestion
 from agent_reach.research.runner import ResearchRun
 from agent_reach.research.serialization import deserialize_run, serialize_run
@@ -20,10 +24,6 @@ def test_serialized_run_has_schema_and_stable_evidence_id():
 
 
 def test_serialized_run_round_trips_through_cli():
-    import json
-
-    from agent_reach.research.cli import run_document
-    from agent_reach.research.models import SourceKind
 
     plan = ResearchPlan(
         topic="GPU",
@@ -59,7 +59,6 @@ def test_serialized_run_round_trips_through_cli():
 
 
 def test_artifact_survives_serialization_round_trip():
-    from agent_reach.research.artifacts import ArtifactKind, ArtifactRef
 
     run = ResearchRun(ResearchPlan(topic="x", questions=(ResearchQuestion("q"),)))
     item = EvidenceItem(
@@ -83,9 +82,6 @@ def test_artifact_survives_serialization_round_trip():
 
 
 def test_deserialize_rejects_unknown_question_evidence_id():
-    import pytest
-    from agent_reach.research.serialization import deserialize_run
-
     payload = {
         "schema_version": 1,
         "plan": {
@@ -107,9 +103,6 @@ def test_deserialize_rejects_unknown_question_evidence_id():
 
 
 def test_deserialize_rejects_impossible_query_metrics():
-    import pytest
-    from agent_reach.research.serialization import deserialize_run
-
     payload = {
         "schema_version": 1,
         "plan": {
@@ -131,9 +124,6 @@ def test_deserialize_rejects_impossible_query_metrics():
 
 
 def test_deserialize_rejects_unknown_artifact_kind():
-    import pytest
-    from agent_reach.research.serialization import deserialize_run
-
     payload = {
         "schema_version": 1,
         "plan": {
@@ -168,8 +158,6 @@ def test_deserialize_rejects_unknown_artifact_kind():
 
 
 def test_artifact_round_trip_is_json_safe():
-    from agent_reach.research.artifacts import ArtifactKind, ArtifactRef
-    from agent_reach.research.serialization import deserialize_run
 
     run = ResearchRun(
         ResearchPlan(
@@ -203,10 +191,6 @@ def test_artifact_round_trip_is_json_safe():
 
 
 def test_deserialize_rejects_tampered_evidence_id():
-    import pytest
-
-    from agent_reach.research.serialization import deserialize_run
-
     run = ResearchRun(
         ResearchPlan(topic="x", questions=(ResearchQuestion("q"),))
     )
