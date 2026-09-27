@@ -1,6 +1,18 @@
 # 搜索工具
 
-Agent Reach 的搜索层包含 Exa、Hacker News、ArXiv 和 Google Images。
+Agent Reach 的搜索层包含 Exa、DuckDuckGo、Hacker News、ArXiv 和 Google Images。
+
+## DuckDuckGo
+
+可选零 Key fallback，使用维护中的 `ddgs` 包。安装：
+
+```bash
+pip install -U ddgs
+```
+
+Research Edition 内部可使用 `DuckDuckGoSearchChannel.search()`；它固定调用
+`backend="duckduckgo"`，不会把其他 metasearch backend 混入 DuckDuckGo 证据。
+
 
 ## Exa 全网搜索
 
@@ -74,7 +86,7 @@ gh search code "def transcribe_audio" --language python
 
 | 场景 | 首选 |
 |---|---|
-| 通用网页发现 | Exa |
+| 通用网页发现 | Exa；无 Key/备用时 DuckDuckGo |
 | 技术/创业社区讨论 | Hacker News |
 | 学术与方法论证据 | ArXiv |
 | 实物图片、PCB、产品照片 | Google Images + context page |
