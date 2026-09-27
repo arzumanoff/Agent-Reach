@@ -31,9 +31,9 @@ class ResearchPlan:
             raise ValueError("topic must not be empty")
         if not self.questions:
             raise ValueError("at least one research question is required")
-        question_texts = [question.text.strip() for question in self.questions]
-        if len(set(question_texts)) != len(question_texts):
-            raise ValueError("research question text must be unique")
+        normalized_questions = [question.text.strip().casefold() for question in self.questions]
+        if len(set(normalized_questions)) != len(normalized_questions):
+            raise ValueError("research question texts must be unique")
         if self.max_results_per_source < 1:
             raise ValueError("max_results_per_source must be positive")
         if self.minimum_independent_sources < 1:
