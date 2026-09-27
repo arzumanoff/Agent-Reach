@@ -27,3 +27,41 @@ def test_default_source_kinds_are_conservative():
     assert DEFAULT_SOURCE_KINDS["duckduckgo"] == SourceKind.SECONDARY
     assert DEFAULT_SOURCE_KINDS["exa"] == SourceKind.SECONDARY
     assert DEFAULT_SOURCE_KINDS["google_images"] == SourceKind.SECONDARY
+
+
+class Config:
+    def __init__(self, values=None):
+        self.values = values or {}
+
+    def get(self, key, default=None):
+        return self.values.get(key, default)
+
+
+def test_build_live_sources_includes_zero_config_sources(monkeypatch):
+    monkeypatch.setattr(
+        "agent_reach.research.live.DuckDuckGoSearchChannel.check",
+        lambda self, config=None: ("off", "missing"),
+    )
+    searches, kinds = build_live_sources(Config())
+    assert "arxiv" in searches
+    assert "hackernews" in searches
+    assert "exa" not in searches
+    assert "google_images" not in searches
+    assert kinds["arxiv"].value == "primary"
+
+
+def test_build_live_sources_adds_configured_optional_sources(monkeypatch):
+    monkeypatch.setattr(
+        "agent_reach.research.live.DuckDuckGoSearchChannel.check",
+        lambda self, config=None: ("warn", "installed"),
+    )
+    config = Config(
+        {
+            "exa_api_key": "exa",
+            "google_api_key": "google",
+            "google_cx": "cx",
+        }
+    )
+    searches, kinds = build_live_sources(config)
+    assert {"arxiv", "hackernews", "duckduckgo", "exa", "google_images"} <= set(searches)
+    assert kinds["duckduckgo"].value == "secondary"
