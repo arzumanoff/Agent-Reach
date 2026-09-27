@@ -1,36 +1,81 @@
 # 搜索工具
 
-Exa AI 搜索引擎。
+Agent Reach 的搜索层现在包含 Exa、Hacker News、ArXiv 和 Google Images。
 
-## Exa AI 搜索
+## Exa 全网搜索
 
-高质量 AI 搜索引擎，适合查找技术文档、官方示例和相关网页。
+有个人 API Key 时可直接走 REST；没有 Key 时保留 mcporter/MCP 路径。
 
 ```bash
+# 个人 Key 已配置时
+agent-reach-exa search "query" --num-results 5
+
+# 零配置 MCP 路径
 mcporter call exa.web_search_exa query="query" numResults=5
-mcporter call exa.web_search_exa query="library API code example" numResults=5
 ```
 
-### 使用场景
+需要抓正文时：
 
-| 场景 | 参数 |
-|-----|------|
-| 网页搜索 | `web_search_exa(query: "...", numResults: 5)` |
-| 技术/代码资料 | `web_search_exa(query: "框架名 API 示例", numResults: 5)` |
+```bash
+agent-reach-exa contents "https://example.com/page"
+mcporter call exa.web_fetch_exa urls='["https://example.com/page"]'
+```
 
-> Exa MCP 的 `get_code_context_exa` 已弃用且默认不注册。代码问题也使用
-> `web_search_exa`；需要精确搜索仓库内容时，改用 `dev.md` 中的 GitHub 搜索。
+> Exa MCP 的 `get_code_context_exa` 已弃用且默认不注册。代码问题继续用
+> `web_search_exa`；精确仓库内容改用 `dev.md` 里的 GitHub 搜索。
 
-### 特点
+## Hacker News
 
-- 擅长英文内容和技术文档
-- 可通过查询词定位官方文档和代码示例
-- 结果质量高
+零配置。适合开发者讨论、早期项目、技术争议和创业信息。
 
-## 与其他搜索工具对比
+```bash
+curl -s "https://hn.algolia.com/api/v1/search?query=QUERY&tags=story&hitsPerPage=5"
+curl -s "https://hn.algolia.com/api/v1/search_by_date?query=QUERY&tags=story&hitsPerPage=5"
+```
 
-| 工具 | 来源 | 适用场景 |
-|-----|------|---------|
-| Exa | agent-reach | 英文/技术/代码搜索 |
-| 智谱搜索 | my-mcp-tools | 中文搜索 |
-| GitHub 搜索 | agent-reach (dev.md) | 仓库/代码搜索 |
+Python/Agent Reach 内部可使用 `HackerNewsChannel.search()`、`get_item()`、
+`get_stories()` 和 `get_user()`。社区讨论只能作为 community evidence；
+不要自动当成 primary source。
+
+## ArXiv
+
+零配置，走公开 Atom API。适合论文、方法、benchmark 和学术 первоисточник。
+
+```bash
+curl -s "https://export.arxiv.org/api/query?search_query=all:transformer&start=0&max_results=5"
+```
+
+支持字段语法，例如 `au:Smith`、`cat:cs.CV`。ArXiv 有限流，连续请求应留间隔。
+
+## Google Images
+
+只走官方 Custom Search JSON API；**不要抓取 google.com 图片结果页**。
+
+配置：
+
+```bash
+agent-reach configure google-key
+agent-reach configure google-cx
+```
+
+Research Edition 内部使用 `GoogleImagesChannel.search()`。结果图片本身是 artifact；
+在把图片当成 доказательство 前，应检查 `context_url`、来源页面 и provenance。
+
+## GitHub 搜索
+
+仓库搜索不要把多词 query 整体包进 кавычки，否则 `gh` 会 превратить его в точную фразу。
+
+```bash
+gh search repos arxiv api python --sort stars --limit 10
+gh search code "def transcribe_audio" --language python
+```
+
+## Как выбирать источник
+
+| Задача | Сначала |
+|---|---|
+| Общий веб-поиск | Exa |
+| Технические/стартап обсуждения | Hacker News |
+| Научные утверждения | ArXiv |
+| Реальные фото/PCB/продукты | Google Images + context page |
+| Репозитории/коммиты/код | GitHub |
