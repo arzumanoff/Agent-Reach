@@ -44,7 +44,10 @@ def evaluate_policy(plan: ResearchPlan, store: EvidenceStore) -> PolicyResult:
             f"need {plan.minimum_independent_sources} independent sources; have {len(identities)}"
         )
 
-    if any(q.require_primary_source for q in plan.questions) and not primary_identities:
+    required_primary_questions = [
+        question for question in plan.questions if question.require_primary_source
+    ]
+    if required_primary_questions and not primary_identities:
         reasons.append("plan requires primary-source evidence but none was collected")
 
     return PolicyResult(
