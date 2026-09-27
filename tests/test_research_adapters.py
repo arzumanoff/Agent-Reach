@@ -29,3 +29,19 @@ def test_hn_result_prefers_external_url_but_keeps_source_id():
     )
     assert item.source_id == "42"
     assert item.canonical_url == "https://example.test/post"
+
+
+def test_exa_highlights_become_claim_when_text_is_absent():
+    item = evidence_from_result(
+        "exa",
+        {"url": "https://example.test", "title": "Page", "highlights": ["First fact", "Second fact"]},
+    )
+    assert item.claim == "Page"
+
+
+def test_image_context_url_is_used_when_image_url_missing():
+    item = evidence_from_result(
+        "google_images",
+        {"title": "PCB", "context_url": "https://vendor.example/board"},
+    )
+    assert item.canonical_url == "https://vendor.example/board"
