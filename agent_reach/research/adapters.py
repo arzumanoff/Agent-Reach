@@ -18,12 +18,26 @@ def evidence_from_result(
     backend: str | None = None,
     source_kind: SourceKind = SourceKind.UNKNOWN,
 ) -> EvidenceItem:
+    metadata: dict[str, Any] = {
+        "raw_keys": tuple(sorted(str(k) for k in result)),
+    }
+
     if source == "google_images":
         canonical_url = _first(result, "context_url", "url")
+        if result.get("url"):
+            metadata["artifact_url"] = scrub_url_credentials(str(result["url"]))
+    elif source == "hackernews":
+        # The claim comes from HN discussion/search metadata. Keep the HN thread
+        # as provenance and record the linked article separately.
+        canonical_url = _first(result, "hn_url", "url")
+        if result.get("url"):
+            metadata["external_url"] = scrub_url_credentials(str(result["url"]))
     else:
-        canonical_url = _first(result, "url", "link", "hn_url", "context_url")
+        canonical_url = _first(result, "url", "link", "context_url")
+
     if canonical_url:
-        canonical_url = scrub_url_credentials(canonical_url)
+        canonical_url = scrub_url_credentials(str(canonical_url))
+
     source_id = _first(result, "id", "arxiv_id", "objectID")
     title = _first(result, "title")
     author = _author(result)
@@ -42,14 +56,7 @@ def evidence_from_result(
         published_at=str(published) if published else None,
         source_kind=source_kind,
         backend=backend,
-        metadata={
-            "raw_keys": tuple(sorted(str(k) for k in result)),
-            **(
-                {"artifact_url": scrub_url_credentials(result.get("url"))}
-                if source == "google_images" and result.get("url")
-                else {}
-            ),
-        },
+        metadata=metadata,
     )
 
 
