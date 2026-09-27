@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
+from .artifacts import ArtifactKind, ArtifactRef
 from .models import EvidenceItem, EvidenceState, SourceKind
 from .planner import ResearchPlan, ResearchQuestion
 from .runner import ResearchRun
@@ -86,7 +87,17 @@ def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
                 published_at=raw.get("published_at"),
                 source_kind=SourceKind(raw.get("source_kind", "unknown")),
                 state=EvidenceState(raw.get("state", "unverified")),
-                artifact_refs=tuple(raw.get("artifact_refs", ())),
+                artifact_refs=tuple(
+                    ArtifactRef(
+                        kind=ArtifactKind(artifact.get("kind")),
+                        locator=str(artifact.get("locator", "")),
+                        source=str(artifact.get("source", "")),
+                        description=artifact.get("description"),
+                        content_hash=artifact.get("content_hash"),
+                    )
+                    for artifact in raw.get("artifact_refs", ())
+                    if isinstance(artifact, dict)
+                ),
                 corroborates=tuple(raw.get("corroborates", ())),
                 contradicts=tuple(raw.get("contradicts", ())),
                 backend=raw.get("backend"),
