@@ -17,3 +17,10 @@ def test_requested_sources_preserve_order_and_deduplicate():
         ),
     )
     assert plan.requested_sources == ("github", "youtube", "reddit")
+
+
+def test_question_rejects_empty_text_and_sources():
+    with pytest.raises(ValueError):
+        ResearchQuestion("   ")
+    with pytest.raises(ValueError):
+        ResearchQuestion("q", ("github", " "))
