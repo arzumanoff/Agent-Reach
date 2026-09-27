@@ -1,8 +1,4 @@
-"""JSON-in/Markdown-out CLI for deterministic Research Edition runs.
-
-This command intentionally consumes a prepared plan/results JSON document. Network
-execution remains in channel adapters so the core can be tested and replayed offline.
-"""
+"""JSON-in/Markdown-out CLI for deterministic Research Edition runs."""
 
 from __future__ import annotations
 
@@ -14,9 +10,13 @@ from .models import SourceKind
 from .planner import ResearchPlan, ResearchQuestion
 from .report import render_markdown
 from .runner import ResearchRun
+from .serialization import deserialize_run
 
 
 def run_document(payload: dict) -> str:
+    if payload.get("schema_version") == 1 and "plan" in payload:
+        return render_markdown(deserialize_run(payload))
+
     questions = tuple(
         ResearchQuestion(
             text=q["text"],
@@ -38,14 +38,21 @@ def run_document(payload: dict) -> str:
         for result in results:
             from .adapters import evidence_from_result
 
-            run.store.add(evidence_from_result(source, result, source_kind=kind))
+            evidence_id = run.store.add(
+                evidence_from_result(source, result, source_kind=kind)
+            )
+            for question in questions:
+                if source in question.preferred_sources:
+                    run.question_evidence.setdefault(question.text, set()).add(
+                        evidence_id
+                    )
     run.coverage_gaps.extend(payload.get("coverage_gaps", ()))
     return render_markdown(run)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agent-reach-research")
-    parser.add_argument("input", type=Path, nargs="?", help="Prepared research JSON document")
+    parser.add_argument("input", type=Path, nargs="?", help="Research JSON document")
     parser.add_argument("-o", "--output", type=Path)
     args = parser.parse_args(argv)
     if args.input is None:
