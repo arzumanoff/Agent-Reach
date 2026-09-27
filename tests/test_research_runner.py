@@ -61,3 +61,22 @@ def test_runner_tracks_question_evidence_ids():
     store = run.collect({"web": lambda q, n: [{"id": "1", "text": "claim"}]})
     assert len(store) == 1
     assert run.question_evidence["q"] == {store.all()[0].evidence_id}
+
+
+def test_runner_uses_all_sources_when_none_preferred():
+    plan = ResearchPlan(
+        topic="test",
+        questions=(ResearchQuestion("query"),),
+        minimum_independent_sources=1,
+    )
+    run = ResearchRun(plan)
+    run.collect(
+        {
+            "b": lambda q, n: [{"url": "https://b.example/x", "text": "b"}],
+            "a": lambda q, n: [{"url": "https://a.example/x", "text": "a"}],
+        }
+    )
+    assert run.attempted_queries == 2
+    assert run.successful_queries == 2
+    assert len(run.store) == 2
+    assert len(run.question_evidence["query"]) == 2
