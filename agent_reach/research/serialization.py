@@ -21,6 +21,6 @@ def serialize_run(run: ResearchRun) -> dict[str, Any]:
     return {
         "schema_version": 1,
         "plan": asdict(run.plan),
-        "coverage_gaps": list(run.coverage_gaps),
+        "coverage_gaps": list(run.coverage_gaps),\n        "attempted_queries": run.attempted_queries,\n        "successful_queries": run.successful_queries,
         "evidence": evidence,
     }
