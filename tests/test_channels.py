@@ -36,6 +36,11 @@ class TestChannelRegistry:
         assert "facebook" in names
         assert "instagram" in names
         assert "v2ex" in names
+        assert "arxiv" in names
+        assert "hackernews" in names
+        assert "duckduckgo" in names
+        assert "tiktok" in names
+        assert "google_images" in names
 
 
 class TestOpenCLISiteChannels:
