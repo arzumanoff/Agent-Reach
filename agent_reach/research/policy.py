@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Set
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -30,7 +31,11 @@ def source_identity(item: EvidenceItem) -> str:
     return "channel:" + item.source
 
 
-def evaluate_policy(plan: ResearchPlan, store: EvidenceStore) -> PolicyResult:
+def evaluate_policy(
+    plan: ResearchPlan,
+    store: EvidenceStore,
+    question_evidence: Mapping[str, Set[str]] | None = None,
+) -> PolicyResult:
     identities = {source_identity(item) for item in store.all()}
     primary_identities = {
         source_identity(item)
@@ -47,8 +52,21 @@ def evaluate_policy(plan: ResearchPlan, store: EvidenceStore) -> PolicyResult:
     required_primary_questions = [
         question for question in plan.questions if question.require_primary_source
     ]
-    if required_primary_questions and not primary_identities:
-        reasons.append("plan requires primary-source evidence but none was collected")
+    if question_evidence is None:
+        if required_primary_questions and not primary_identities:
+            reasons.append("plan requires primary-source evidence but none was collected")
+    else:
+        for question in required_primary_questions:
+            ids = question_evidence.get(question.text, set())
+            has_primary = any(
+                (item := store.get(evidence_id)) is not None
+                and item.source_kind == SourceKind.PRIMARY
+                for evidence_id in ids
+            )
+            if not has_primary:
+                reasons.append(
+                    f"question {question.text!r} requires primary-source evidence"
+                )
 
     return PolicyResult(
         satisfied=not reasons,
