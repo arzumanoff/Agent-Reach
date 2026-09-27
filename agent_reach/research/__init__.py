@@ -2,6 +2,7 @@
 
 from .artifacts import ArtifactKind, ArtifactRef
 from .corroboration import link_exact_claims
+from .live import build_live_searches, execute_live_research
 from .models import EvidenceItem, EvidenceState, SourceKind
 from .orchestrator import execute_research
 from .planner import ResearchPlan, ResearchQuestion
@@ -14,6 +15,7 @@ __all__ = [
     "ArtifactKind",
     "ArtifactRef",
     "EvidenceItem",
+    "build_live_searches",
     "EvidenceState",
     "EvidenceStore",
     "ResearchPlan",
@@ -24,6 +26,7 @@ __all__ = [
     "SourceKind",
     "evaluate_policy",
     "execute_research",
+    "execute_live_research",
     "apply_relations",
     "link_exact_claims",
 ]
