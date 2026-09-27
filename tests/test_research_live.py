@@ -1,4 +1,4 @@
-from agent_reach.research.live import DEFAULT_SOURCE_KINDS, arxiv_search, hackernews_search
+from agent_reach.research.live import DEFAULT_SOURCE_KINDS, arxiv_search, build_live_sources, hackernews_search
 
 
 class Arxiv:
