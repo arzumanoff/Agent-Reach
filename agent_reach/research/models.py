@@ -6,8 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
-from typing import Any
-
+from typing import Any\nfrom urllib.parse import urlsplit, urlunsplit\n
 
 class EvidenceState(str, Enum):
     CONFIRMED = "confirmed"
@@ -54,7 +53,23 @@ class EvidenceItem:
     def evidence_id(self) -> str:
         """Stable ID based on source identity and normalized claim."""
         identity = self.canonical_url or self.source_id or self.source
-        normalized_identity = " ".join(str(identity).split()).casefold()
+        normalized_identity = _normalize_identity(str(identity))
         normalized_claim = " ".join(self.claim.split()).casefold()
         raw = f"{normalized_identity}\n{normalized_claim}".encode("utf-8")
         return sha256(raw).hexdigest()[:20]
+
+
+def _normalize_identity(identity: str) -> str:
+    value = " ".join(identity.split())
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return value.casefold()
+    if parsed.scheme and parsed.hostname:
+        host = parsed.hostname.lower().rstrip(".")
+        port = parsed.port
+        netloc = host if port in (None, 80, 443) else f"{host}:{port}"
+        return urlunsplit(
+            (parsed.scheme.lower(), netloc, parsed.path, parsed.query, "")
+        )
+    return value.casefold()
