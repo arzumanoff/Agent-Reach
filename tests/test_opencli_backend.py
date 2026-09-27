@@ -197,3 +197,39 @@ def test_unpacked_scan_requires_manifest_but_does_not_claim_browser_load(
     assert not _unpacked_extension_files_present()
     (unpacked / "manifest.json").write_text('{"name": "OpenCLI"}', encoding="utf-8")
     assert _unpacked_extension_files_present()
+
+
+def test_multi_profile_connected_is_ready():
+    daemon_status = {
+        "ok": True,
+        "extensionConnected": False,
+        "profileRequired": True,
+        "profiles": [
+            {"contextId": "one", "extensionConnected": True},
+            {"contextId": "two", "extensionConnected": True},
+        ],
+    }
+    st, _ = _status_with(
+        ProbeResult("ok", output="1.8.7"),
+        daemon_status,
+        ext_on_disk=True,
+    )
+    assert st.daemon_running and st.extension_connected
+    assert st.ready
+
+
+def test_profiles_present_but_none_connected_is_not_ready():
+    daemon_status = {
+        "ok": True,
+        "extensionConnected": False,
+        "profiles": [
+            {"contextId": "one", "extensionConnected": False},
+        ],
+    }
+    st, _ = _status_with(
+        ProbeResult("ok", output="1.8.7"),
+        daemon_status,
+        ext_on_disk=True,
+    )
+    assert st.daemon_running and not st.extension_connected
+    assert not st.ready
