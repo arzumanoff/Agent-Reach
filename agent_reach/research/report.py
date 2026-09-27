@@ -22,6 +22,11 @@ def render_markdown(run: ResearchRun) -> str:
     lines = [
         f"# Research report: {run.plan.topic}",
         "",
+        "## Execution",
+        "",
+        f"- Queries attempted: {run.attempted_queries}",
+        f"- Queries with results: {run.successful_queries}",
+        "",
         "## Evidence summary",
         "",
         f"- Total: {summary['total']}",
