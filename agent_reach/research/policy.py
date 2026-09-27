@@ -19,11 +19,7 @@ class PolicyResult:
 
 
 def source_identity(item: EvidenceItem) -> str:
-    """Best available identity for independence counting.
-
-    Prefer the publisher/site host for URL-backed evidence, then a stable source ID,
-    and only fall back to the transport/channel name.
-    """
+    """Best available identity for conservative independence counting."""
     if item.canonical_url:
         try:
             host = (urlsplit(item.canonical_url).hostname or "").lower().rstrip(".")
@@ -31,7 +27,7 @@ def source_identity(item: EvidenceItem) -> str:
             host = ""
         if host:
             return "host:" + host
-    if item.source_id:\n        # A source-local identifier distinguishes records but does not prove\n        # publisher independence across transports. Keep the channel namespace.\n        return f"channel:{item.source}"\n    return "channel:" + item.source
+    return "channel:" + item.source
 
 
 def evaluate_policy(plan: ResearchPlan, store: EvidenceStore) -> PolicyResult:
