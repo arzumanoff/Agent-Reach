@@ -17,10 +17,7 @@ def claim_key(text: str) -> str:
 
 
 def link_exact_claims(store: EvidenceStore) -> EvidenceStore:
-    """Link identical normalized claims across independent source identities.
-
-    Semantic/LLM matching can be layered later, but the core remains deterministic.
-    """
+    """Link identical normalized claims across independent source identities."""
     groups: dict[str, list[EvidenceItem]] = {}
     for item in store.all():
         groups.setdefault(claim_key(item.claim), []).append(item)
@@ -31,7 +28,8 @@ def link_exact_claims(store: EvidenceStore) -> EvidenceStore:
             corroborates = tuple(
                 other.evidence_id
                 for other in items
-                if other.evidence_id != item.evidence_id\n                and source_identity(other) != source_identity(item)
+                if other.evidence_id != item.evidence_id
+                and source_identity(other) != source_identity(item)
             )
             linked.add(replace(item, corroborates=corroborates))
     return linked
