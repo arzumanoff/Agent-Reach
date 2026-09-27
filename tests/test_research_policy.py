@@ -156,3 +156,28 @@ def test_www_prefix_does_not_create_fake_independence():
     )
     result = evaluate_policy(plan, EvidenceStore([a, b]))
     assert result.independent_sources == 1
+
+
+def test_publisher_aliases_do_not_inflate_independence():
+    plan = ResearchPlan(
+        topic="x",
+        questions=(ResearchQuestion("q"),),
+        minimum_independent_sources=2,
+    )
+    store = EvidenceStore(
+        [
+            EvidenceItem(
+                source="web",
+                canonical_url="https://www.reddit.com/r/test/comments/1",
+                claim="a",
+            ),
+            EvidenceItem(
+                source="exa",
+                canonical_url="https://reddit.com/r/test/comments/2",
+                claim="b",
+            ),
+        ]
+    )
+    result = evaluate_policy(plan, store)
+    assert result.independent_sources == 1
+    assert result.satisfied is False
