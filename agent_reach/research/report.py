@@ -57,9 +57,13 @@ def render_markdown(run: ResearchRun) -> str:
                 item.claim,
                 "",
                 f"Source: {item.source} | Locator: {provenance}",
-                "",
             ]
         )
+        for artifact in item.artifact_refs:
+            lines.append(
+                f"- Artifact: {artifact.kind.value} | {artifact.locator}"
+            )
+        lines.append("")
 
     lines.extend(["## Coverage gaps", ""])
     if run.coverage_gaps:
