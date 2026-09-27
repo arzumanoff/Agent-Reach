@@ -78,7 +78,11 @@ class Config:
 def test_build_live_searches_respects_config(monkeypatch):
     from agent_reach.research import live
 
-    monkeypatch.setattr(live.importlib.util, "find_spec", lambda name: None)
+    monkeypatch.setattr(
+        live.DuckDuckGoSearchChannel,
+        "check",
+        lambda self, config=None: ("off", "missing"),
+    )
     searches, kinds = live.build_live_searches(
         Config(
             {
@@ -98,9 +102,9 @@ def test_build_live_searches_adds_ddg_when_installed(monkeypatch):
     from agent_reach.research import live
 
     monkeypatch.setattr(
-        live.importlib.util,
-        "find_spec",
-        lambda name: object() if name == "ddgs" else None,
+        live.DuckDuckGoSearchChannel,
+        "check",
+        lambda self, config=None: ("warn", "installed"),
     )
     searches, _ = live.build_live_searches(Config())
     assert "duckduckgo" in searches
