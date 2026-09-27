@@ -57,7 +57,7 @@ class GoogleImagesChannel(Channel):
                 raw = response.read(_MAX_BYTES + 1)
         except urllib.error.HTTPError as exc:
             raise ValueError(f"Google image search HTTP {exc.code}") from None
-        except urllib.error.URLError as exc:
+        except urllib.error.URLError:
             raise ValueError("Google image search transport failure") from None
 
         if len(raw) > _MAX_BYTES:
