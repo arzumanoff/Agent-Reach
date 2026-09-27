@@ -19,6 +19,16 @@ def serialize_run(run: ResearchRun) -> dict[str, Any]:
         payload = asdict(item)
         payload["source_kind"] = item.source_kind.value
         payload["state"] = derive_state(item, run.store).value
+        payload["artifact_refs"] = [
+            {
+                "kind": artifact.kind.value,
+                "locator": artifact.locator,
+                "source": artifact.source,
+                "description": artifact.description,
+                "content_hash": artifact.content_hash,
+            }
+            for artifact in item.artifact_refs
+        ]
         payload["evidence_id"] = item.evidence_id
         evidence.append(payload)
 
@@ -135,8 +145,7 @@ def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
         except (TypeError, ValueError) as exc:
             raise ValueError("serialized evidence has invalid enum value") from exc
 
-        items.append(
-            EvidenceItem(
+        item = EvidenceItem(
                 source=str(raw.get("source", "")),
                 claim=str(raw.get("claim", "")),
                 canonical_url=raw.get("canonical_url"),
@@ -162,7 +171,10 @@ def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
                 retrieved_at=str(raw.get("retrieved_at", "")),
                 metadata=dict(raw_metadata),
             )
-        )
+        serialized_id = raw.get("evidence_id")
+        if serialized_id is not None and str(serialized_id) != item.evidence_id:
+            raise ValueError("serialized evidence_id does not match evidence content")
+        items.append(item)
 
     raw_gaps = payload.get("coverage_gaps", ())
     if not isinstance(raw_gaps, (list, tuple)):
@@ -185,7 +197,10 @@ def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
         raise ValueError("serialized question_evidence must be an object")
 
     known_ids = {item.evidence_id for item in run.store.all()}
+    known_questions = {question.text for question in plan.questions}
     for question, ids in raw_question_evidence.items():
+        if str(question) not in known_questions:
+            raise ValueError("serialized question_evidence references unknown question")
         if not isinstance(ids, list):
             raise ValueError("serialized question evidence IDs must be a list")
         normalized_ids = {str(evidence_id) for evidence_id in ids}
