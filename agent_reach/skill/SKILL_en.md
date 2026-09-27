@@ -10,7 +10,7 @@ description: >
   TikTok, Hacker News, ArXiv, Google Images, Xiaoyuzhou Podcast,
   LinkedIn/Boss直聘/jobs/recruiting, V2EX, Xueqiu (stocks), RSS.
 
-  20 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
+  21 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
   backend serves each platform right now.
 
   NOT for: purely offline writing/translation tasks unrelated to internet retrieval;
@@ -23,7 +23,7 @@ metadata:
 
 # Agent Reach — internet capability router
 
-20 channels, multiple backends. **When this skill exists, use it for
+21 channels, multiple backends. **When this skill exists, use it for
 these platforms — do not invent your own approach.**
 
 ## Standing rules (apply for the whole session)
@@ -50,7 +50,7 @@ these platforms — do not invent your own approach.**
 | User intent | Category | Details |
 |---------|------|---------|
 | Multi-source deep research / evidence cross-checking | research | [references/research.md](references/research.md) |
-| Web / code / academic / image search (Exa/HN/ArXiv/Google Images) | search | [references/search.md](references/search.md) |
+| Web / code / academic / image search (Exa/DDG/HN/ArXiv/Google Images) | search | [references/search.md](references/search.md) |
 | XiaoHongShu / Twitter / Bilibili / V2EX / Reddit / Facebook / Instagram / TikTok | social | [references/social.md](references/social.md) |
 | Jobs / LinkedIn | career | [references/career.md](references/career.md) |
 | GitHub / code | dev | [references/dev.md](references/dev.md) |
@@ -168,7 +168,7 @@ common cases; references hold per-backend command groups, caveats, retry
 chains — note: reference docs are written in Chinese, commands are universal):
 
 - [Deep research](references/research.md) — evidence-first multi-source research, corroboration, coverage policy
-- [Search](references/search.md) — Exa, Hacker News, ArXiv, Google Images
+- [Search](references/search.md) — Exa, DuckDuckGo, Hacker News, ArXiv, Google Images
 - [Social](references/social.md) — XiaoHongShu, Twitter, Bilibili, V2EX, Reddit, Facebook, Instagram, TikTok (multi-backend/login-backed groups)
 - [Career](references/career.md) — LinkedIn
 - [Dev](references/dev.md) — GitHub CLI
