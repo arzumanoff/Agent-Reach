@@ -38,6 +38,10 @@ def _publisher_host(host: str) -> str:
 
 def source_identity(item: EvidenceItem) -> str:
     """Best available identity for conservative independence counting."""
+    publisher_id = item.metadata.get("publisher_id")
+    if isinstance(publisher_id, str) and publisher_id.strip():
+        return "publisher:" + publisher_id.strip().casefold()
+
     if item.canonical_url:
         try:
             host = (urlsplit(item.canonical_url).hostname or "").lower().rstrip(".")
@@ -45,7 +49,20 @@ def source_identity(item: EvidenceItem) -> str:
             host = ""
         if host:
             return "host:" + _publisher_host(host)
+
     return "channel:" + item.source
+
+
+def _identities_for_ids(
+    store: EvidenceStore,
+    evidence_ids: Set[str],
+) -> set[str]:
+    identities: set[str] = set()
+    for evidence_id in evidence_ids:
+        item = store.get(evidence_id)
+        if item is not None:
+            identities.add(source_identity(item))
+    return identities
 
 
 def evaluate_policy(
@@ -61,10 +78,22 @@ def evaluate_policy(
     }
     reasons: list[str] = []
 
-    if len(identities) < plan.minimum_independent_sources:
-        reasons.append(
-            f"need {plan.minimum_independent_sources} independent sources; have {len(identities)}"
-        )
+    if question_evidence is None:
+        if len(identities) < plan.minimum_independent_sources:
+            reasons.append(
+                f"need {plan.minimum_independent_sources} independent sources; "
+                f"have {len(identities)}"
+            )
+    else:
+        for question in plan.questions:
+            ids = question_evidence.get(question.text, set())
+            question_identities = _identities_for_ids(store, ids)
+            if len(question_identities) < plan.minimum_independent_sources:
+                reasons.append(
+                    f"question {question.text!r} needs "
+                    f"{plan.minimum_independent_sources} independent sources; "
+                    f"have {len(question_identities)}"
+                )
 
     required_primary_questions = [
         question for question in plan.questions if question.require_primary_source
