@@ -38,14 +38,9 @@ def run_document(payload: dict) -> str:
         for result in results:
             from .adapters import evidence_from_result
 
-            evidence_id = run.store.add(
+            run.store.add(
                 evidence_from_result(source, result, source_kind=kind)
             )
-            for question in questions:
-                if source in question.preferred_sources:
-                    run.question_evidence.setdefault(question.text, set()).add(
-                        evidence_id
-                    )
     run.coverage_gaps.extend(payload.get("coverage_gaps", ()))
     return render_markdown(run)
 
