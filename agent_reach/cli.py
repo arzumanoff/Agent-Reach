@@ -41,7 +41,7 @@ _SENSITIVE_CONFIG_KEYS = {
     "xhs-cookies",
 }
 
-_POSITIONAL_SECRET_DENY_KEYS = frozenset(_SENSITIVE_CONFIG_KEYS)
+_POSITIONAL_SECRET_DENY_KEYS = frozenset({"proxy", "exa-key", "github-token", "groq-key", "openai-key", "google-key", "google-cx"})
 
 
 def _ensure_utf8_console():
