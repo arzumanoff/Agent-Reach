@@ -49,3 +49,15 @@ def test_runner_discards_malformed_results_without_crashing():
     assert len(store) == 0
     assert run.discarded_results == 2
     assert any("no usable results" in gap for gap in run.coverage_gaps)
+
+
+def test_runner_tracks_question_evidence_ids():
+    plan = ResearchPlan(
+        topic="test",
+        questions=(ResearchQuestion("q", ("web",)),),
+        minimum_independent_sources=1,
+    )
+    run = ResearchRun(plan)
+    store = run.collect({"web": lambda q, n: [{"id": "1", "text": "claim"}]})
+    assert len(store) == 1
+    assert run.question_evidence["q"] == {store.all()[0].evidence_id}
