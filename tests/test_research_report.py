@@ -13,3 +13,10 @@ def test_markdown_report_preserves_locator_and_gaps():
     assert "# Research report: GPU" in text
     assert "Locator: issue:1" in text
     assert "arxiv: no results" in text
+
+
+def test_report_includes_discarded_result_count():
+    plan = ResearchPlan(topic="GPU", questions=(ResearchQuestion("memory?"),))
+    run = ResearchRun(plan)
+    run.discarded_results = 3
+    assert "Results discarded: 3" in render_markdown(run)

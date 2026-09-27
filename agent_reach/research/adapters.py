@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from agent_reach.utils.text import scrub_url_credentials
+
 from .models import EvidenceItem, SourceKind
 
 
@@ -16,7 +18,12 @@ def evidence_from_result(
     backend: str | None = None,
     source_kind: SourceKind = SourceKind.UNKNOWN,
 ) -> EvidenceItem:
-    canonical_url = _first(result, "url", "link", "hn_url", "context_url")
+    if source == "google_images":
+        canonical_url = _first(result, "context_url", "url")
+    else:
+        canonical_url = _first(result, "url", "link", "hn_url", "context_url")
+    if canonical_url:
+        canonical_url = scrub_url_credentials(canonical_url)
     source_id = _first(result, "id", "arxiv_id", "objectID")
     title = _first(result, "title")
     author = _author(result)
@@ -35,7 +42,14 @@ def evidence_from_result(
         published_at=str(published) if published else None,
         source_kind=source_kind,
         backend=backend,
-        metadata={"raw_keys": tuple(sorted(str(k) for k in result))},
+        metadata={
+            "raw_keys": tuple(sorted(str(k) for k in result)),
+            **(
+                {"artifact_url": scrub_url_credentials(result.get("url"))}
+                if source == "google_images" and result.get("url")
+                else {}
+            ),
+        },
     )
 
 

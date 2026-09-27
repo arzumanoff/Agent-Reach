@@ -26,6 +26,7 @@ def render_markdown(run: ResearchRun) -> str:
         "",
         f"- Queries attempted: {run.attempted_queries}",
         f"- Queries with results: {run.successful_queries}",
+        f"- Results discarded: {run.discarded_results}",
         "",
         "## Evidence summary",
         "",

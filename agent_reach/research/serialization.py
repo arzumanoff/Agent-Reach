@@ -24,5 +24,6 @@ def serialize_run(run: ResearchRun) -> dict[str, Any]:
         "coverage_gaps": list(run.coverage_gaps),
         "attempted_queries": run.attempted_queries,
         "successful_queries": run.successful_queries,
+        "discarded_results": run.discarded_results,
         "evidence": evidence,
     }

@@ -45,3 +45,25 @@ def test_image_context_url_is_used_when_image_url_missing():
         {"title": "PCB", "context_url": "https://vendor.example/board"},
     )
     assert item.canonical_url == "https://vendor.example/board"
+
+
+def test_google_image_prefers_context_page_for_provenance():
+    item = evidence_from_result(
+        "google_images",
+        {
+            "title": "PCB",
+            "url": "https://cdn.example/pcb.jpg",
+            "context_url": "https://vendor.example/board",
+        },
+    )
+    assert item.canonical_url == "https://vendor.example/board"
+    assert item.metadata["artifact_url"] == "https://cdn.example/pcb.jpg"
+
+
+def test_adapter_scrubs_url_credentials():
+    item = evidence_from_result(
+        "web",
+        {"title": "Page", "text": "claim", "url": "https://u:p@example.test/x?token=secret"},
+    )
+    assert "secret" not in item.canonical_url
+    assert "u:p" not in item.canonical_url

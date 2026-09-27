@@ -40,3 +40,12 @@ def test_runner_tracks_attempted_and_successful_queries():
     })
     assert run.attempted_queries == 2
     assert run.successful_queries == 1
+
+
+def test_runner_discards_malformed_results_without_crashing():
+    plan = ResearchPlan(topic="test", questions=(ResearchQuestion("query", ("web",)),))
+    run = ResearchRun(plan)
+    store = run.collect({"web": lambda q, n: [None, {"title": "", "text": ""}]})
+    assert len(store) == 0
+    assert run.discarded_results == 2
+    assert any("no usable evidence" in gap for gap in run.coverage_gaps)

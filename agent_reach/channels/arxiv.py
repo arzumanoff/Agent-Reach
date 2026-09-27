@@ -53,7 +53,10 @@ def _build_search_query(query: str) -> str:
     ``au:Smith``) are passed through unchanged; plain keywords are prefixed
     with ``all:`` so they search across all fields.
     """
-    if query.lstrip().lower().startswith(_ARXIV_FIELD_PREFIXES):
+    if not isinstance(query, str) or not query.strip():
+        raise ValueError("ArXiv search query must not be empty")
+    query = query.strip()
+    if query.lower().startswith(_ARXIV_FIELD_PREFIXES):
         return query
     return f"all:{query}"
 
@@ -211,6 +214,10 @@ class ArxivChannel(Channel):
             arxiv_id = _strip_version(arxiv_id.split("/abs/")[-1])
         elif "arxiv.org/pdf/" in arxiv_id:
             arxiv_id = _strip_version(arxiv_id.split("/pdf/")[-1].replace(".pdf", ""))
+
+        arxiv_id = arxiv_id.strip()
+        if not arxiv_id:
+            raise ValueError("ArXiv paper ID must not be empty")
 
         # Use id_list parameter for precise lookup
         xml_text = _fetch(f"id_list={quote(arxiv_id)}")

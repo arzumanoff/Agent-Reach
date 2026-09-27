@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
@@ -51,8 +52,14 @@ class GoogleImagesChannel(Channel):
             _API + "?" + params,
             headers={"User-Agent": "agent-reach/1.0"},
         )
-        with urllib.request.urlopen(request, timeout=10) as response:
-            raw = response.read(_MAX_BYTES + 1)
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                raw = response.read(_MAX_BYTES + 1)
+        except urllib.error.HTTPError as exc:
+            raise ValueError(f"Google image search HTTP {exc.code}") from None
+        except urllib.error.URLError as exc:
+            reason = type(exc.reason).__name__
+            raise ValueError(f"Google image search transport failure: {reason}") from None
         if len(raw) > _MAX_BYTES:
             raise ValueError("Google image response exceeds safety limit")
 

@@ -143,8 +143,11 @@ class HackerNewsChannel(Channel):
         if kind not in _STORY_KINDS:
             raise ValueError(f"unknown story kind {kind!r}; expected one of {_STORY_KINDS}")
         ids = _get_json(f"{_FIREBASE_BASE}/{kind}stories.json") or []
+        if not isinstance(ids, list):
+            raise ValueError("Hacker News story list returned invalid JSON shape")
+        limit = max(0, min(int(limit), 100))
         results = []
-        for item_id in ids[: max(0, limit)]:
+        for item_id in ids[:limit]:
             try:
                 item = _get_json(f"{_FIREBASE_BASE}/item/{_path_segment(item_id)}.json")
             except Exception:
@@ -169,10 +172,13 @@ class HackerNewsChannel(Channel):
           children）
         """
         data = _get_json(f"{_ALGOLIA_BASE}/items/{_path_segment(item_id)}")
-        if not data:
-            raise ValueError(f"Hacker News item not found: {item_id}")
+        if not isinstance(data, dict) or not data:
+            raise ValueError(f"Hacker News item not found or invalid: {item_id}")
         comments: list = []
-        self._collect_comments(data.get("children") or [], 0, comments)
+        children = data.get("children") or []
+        if not isinstance(children, list):
+            raise ValueError("Hacker News item returned invalid comments")
+        self._collect_comments(children, 0, comments)
         story_id = data.get("id", item_id)
         return {
             "id": story_id,
@@ -188,8 +194,12 @@ class HackerNewsChannel(Channel):
         }
 
     def _collect_comments(self, children: list, depth: int, out: list) -> None:
-        """Flatten Algolia's nested comment tree depth-first."""
+        """Flatten Algolia's nested comment tree with defensive bounds."""
+        if depth > 64 or len(out) >= 5000:
+            return
         for node in children:
+            if len(out) >= 5000:
+                return
             if not isinstance(node, dict):
                 continue
             out.append(
@@ -214,8 +224,8 @@ class HackerNewsChannel(Channel):
           username, karma, about, created, submitted, hn_url
         """
         data = _get_json(f"{_FIREBASE_BASE}/user/{_path_segment(username)}.json")
-        if not data:
-            raise ValueError(f"Hacker News user not found: {username}")
+        if not isinstance(data, dict) or not data:
+            raise ValueError(f"Hacker News user not found or invalid: {username}")
         return {
             "username": data.get("id", username),
             "karma": data.get("karma", 0),
@@ -244,6 +254,11 @@ class HackerNewsChannel(Channel):
           id, title, url, hn_url, author, points, comments, created_at,
           snippet
         """
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("Hacker News search query must not be empty")
+        query = query.strip()
+        limit = max(1, min(int(limit), 100))
+
         if sort == "relevance":
             endpoint = "search"
         elif sort == "date":
@@ -251,7 +266,7 @@ class HackerNewsChannel(Channel):
         else:
             raise ValueError(f"unknown sort {sort!r}; expected 'relevance' or 'date'")
         params = urlencode(
-            {"query": query, "hitsPerPage": max(1, limit), **({"tags": tags} if tags else {})}
+            {"query": query, "hitsPerPage": limit, **({"tags": tags} if tags else {})}
         )
         data = _get_json(f"{_ALGOLIA_BASE}/{endpoint}?{params}")
         if not isinstance(data, dict):
@@ -261,7 +276,7 @@ class HackerNewsChannel(Channel):
             raise ValueError("Hacker News search returned invalid hits")
 
         results = []
-        for hit in hits[: max(1, limit)]:
+        for hit in hits[:limit]:
             if not isinstance(hit, dict):
                 continue
             object_id = hit.get("objectID", "")

@@ -50,3 +50,24 @@ def test_google_image_search_rejects_invalid_items_shape():
         import pytest
         with pytest.raises(ValueError, match="invalid items"):
             channel.search("GPU PCB", Config(), limit=1)
+
+
+def test_google_image_http_error_does_not_leak_key():
+    import urllib.error
+    channel = GoogleImagesChannel()
+    error = urllib.error.HTTPError(
+        "https://www.googleapis.com/customsearch/v1?key=secret",
+        403,
+        "Forbidden",
+        {},
+        None,
+    )
+    with patch(
+        "agent_reach.channels.google_images.urllib.request.urlopen",
+        side_effect=error,
+    ):
+        import pytest
+        with pytest.raises(ValueError) as raised:
+            channel.search("GPU PCB", Config(), limit=1)
+    assert "secret" not in str(raised.value)
+    assert "403" in str(raised.value)
