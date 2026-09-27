@@ -15,4 +15,4 @@ def test_report_surfaces_unsatisfied_policy():
     text = render_markdown(run)
     assert "Satisfied: false" in text
     assert "need 2 independent sources; have 1" in text
-    assert "requires primary-source evidence" in text
+    assert "question 'memory?' requires primary-source evidence" in text
