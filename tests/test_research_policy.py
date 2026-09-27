@@ -113,3 +113,46 @@ def test_source_diversity_is_checked_per_question():
     )
     assert result.satisfied is False
     assert "question 'q2' needs 2 independent sources; have 1" in result.reasons
+
+
+def test_publisher_id_override_unifies_mirrors():
+    plan = ResearchPlan(
+        topic="x",
+        questions=(ResearchQuestion("q"),),
+        minimum_independent_sources=2,
+    )
+    a = EvidenceItem(
+        source="web",
+        canonical_url="https://docs.vendor.example/a",
+        claim="fact",
+        metadata={"publisher_id": "Vendor"},
+    )
+    b = EvidenceItem(
+        source="exa",
+        canonical_url="https://news.vendor.example/b",
+        claim="fact",
+        metadata={"publisher_id": "vendor"},
+    )
+    result = evaluate_policy(plan, EvidenceStore([a, b]))
+    assert result.independent_sources == 1
+    assert result.satisfied is False
+
+
+def test_www_prefix_does_not_create_fake_independence():
+    plan = ResearchPlan(
+        topic="x",
+        questions=(ResearchQuestion("q"),),
+        minimum_independent_sources=2,
+    )
+    a = EvidenceItem(
+        source="web",
+        canonical_url="https://www.example.test/a",
+        claim="fact",
+    )
+    b = EvidenceItem(
+        source="exa",
+        canonical_url="https://example.test/b",
+        claim="fact",
+    )
+    result = evaluate_policy(plan, EvidenceStore([a, b]))
+    assert result.independent_sources == 1
