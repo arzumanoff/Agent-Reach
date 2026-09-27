@@ -21,9 +21,7 @@ def evidence_from_result(
     title = _first(result, "title")
     author = _author(result)
     published = _first(result, "published", "publishedDate", "created_at", "time")
-    text = claim or _claim_text(result)
-
-    return EvidenceItem(
+    text = claim or _claim_text(result)\n    if not str(text).strip():\n        raise ValueError(f"{source} result contains no usable claim text")\n\n    return EvidenceItem(
         source=source,
         claim=str(text),
         canonical_url=str(canonical_url) if canonical_url else None,
