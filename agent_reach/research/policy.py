@@ -31,9 +31,7 @@ def source_identity(item: EvidenceItem) -> str:
             host = ""
         if host:
             return "host:" + host
-    if item.source_id:
-        return f"{item.source}:{item.source_id}"
-    return "channel:" + item.source
+    if item.source_id:\n        # A source-local identifier distinguishes records but does not prove\n        # publisher independence across transports. Keep the channel namespace.\n        return f"channel:{item.source}"\n    return "channel:" + item.source
 
 
 def evaluate_policy(plan: ResearchPlan, store: EvidenceStore) -> PolicyResult:
