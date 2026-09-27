@@ -44,10 +44,17 @@ class EvidenceItem:
     )
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        if not self.source.strip():
+            raise ValueError("evidence source must not be empty")
+        if not self.claim.strip():
+            raise ValueError("evidence claim must not be empty")
+
     @property
     def evidence_id(self) -> str:
         """Stable ID based on source identity and normalized claim."""
         identity = self.canonical_url or self.source_id or self.source
+        normalized_identity = " ".join(str(identity).split()).casefold()
         normalized_claim = " ".join(self.claim.split()).casefold()
-        raw = f"{identity}\n{normalized_claim}".encode("utf-8")
+        raw = f"{normalized_identity}\n{normalized_claim}".encode("utf-8")
         return sha256(raw).hexdigest()[:20]
