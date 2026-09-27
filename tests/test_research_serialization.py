@@ -3,7 +3,7 @@ import json
 from agent_reach.research.models import EvidenceItem
 from agent_reach.research.planner import ResearchPlan, ResearchQuestion
 from agent_reach.research.runner import ResearchRun
-from agent_reach.research.serialization import serialize_run
+from agent_reach.research.serialization import deserialize_run, serialize_run
 
 
 def test_serialized_run_has_schema_and_stable_evidence_id():
@@ -56,3 +56,27 @@ def test_serialized_run_round_trips_through_cli():
     assert "32 GB" in report
     assert "Satisfied: true" in report
     assert "Queries attempted: 1" in report
+
+
+def test_artifact_survives_serialization_round_trip():
+    from agent_reach.research.artifacts import ArtifactKind, ArtifactRef
+
+    run = ResearchRun(ResearchPlan(topic="x", questions=(ResearchQuestion("q"),)))
+    item = EvidenceItem(
+        source="google_images",
+        canonical_url="https://vendor.example/page",
+        claim="PCB image",
+        artifact_refs=(
+            ArtifactRef(
+                ArtifactKind.IMAGE,
+                "https://img.example/pcb.jpg",
+                "google_images",
+            ),
+        ),
+    )
+    run.store.add(item)
+    payload = json.loads(json.dumps(serialize_run(run)))
+    restored = deserialize_run(payload)
+    artifact = restored.store.all()[0].artifact_refs[0]
+    assert artifact.kind == ArtifactKind.IMAGE
+    assert artifact.locator == "https://img.example/pcb.jpg"
