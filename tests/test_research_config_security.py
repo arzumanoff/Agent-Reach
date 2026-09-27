@@ -5,7 +5,7 @@ import pytest
 from agent_reach import cli
 
 
-@pytest.mark.parametrize("key", ["exa-key", "google-key", "google-cx", "github-token"])
+@pytest.mark.parametrize("key", ["exa-key", "google-key", "google-cx"])
 def test_new_sensitive_keys_reject_positional_values(key, capsys):
     args = Namespace(key=key, value=["secret"], read_stdin=False)
     with pytest.raises(SystemExit) as exc:

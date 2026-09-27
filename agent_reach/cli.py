@@ -41,6 +41,8 @@ _SENSITIVE_CONFIG_KEYS = {
     "xhs-cookies",
 }
 
+_POSITIONAL_SECRET_DENY_KEYS = {"exa-key", "google-key", "google-cx"}
+
 
 def _ensure_utf8_console():
     """Best-effort Windows console UTF-8 setup for CLI runtime only."""
@@ -1400,14 +1402,22 @@ def _read_configure_value(args) -> str:
         return value.rstrip("\r\n")
 
     if values:
-        if getattr(args, "key", None) in _SENSITIVE_CONFIG_KEYS:
+        key = getattr(args, "key", None)
+        if key in _POSITIONAL_SECRET_DENY_KEYS:
             print(
-                "Sensitive configure values cannot be passed positionally because "
+                "Sensitive API credentials cannot be passed positionally because "
                 "shell history and process listings may expose them; omit the value "
                 "for a hidden prompt or use --stdin.",
                 file=sys.stderr,
             )
             raise SystemExit(2)
+        if key in _SENSITIVE_CONFIG_KEYS:
+            print(
+                "Warning: positional secrets are deprecated because shell history "
+                "and process listings may expose them; omit the value for a hidden "
+                "prompt or use --stdin.",
+                file=sys.stderr,
+            )
         return " ".join(values)
 
     try:
@@ -1580,6 +1590,14 @@ def _cmd_configure(args):
         config.set("exa_api_key", value)
         print("Exa API key configured (not live-probed)")
 
+    elif args.key == "google-key":
+        config.set("google_api_key", value)
+        print("Google Custom Search API key configured")
+
+    elif args.key == "google-cx":
+        config.set("google_cx", value)
+        print("Google Custom Search Engine ID configured")
+
     elif args.key == "github-token":
         config.set("github_token", value)
         print("✅ GitHub token configured!")
@@ -1633,14 +1651,6 @@ def _parse_twitter_cookie_input(value: str):
                 auth_token = part.split("=", 1)[1]
             elif part.startswith("ct0="):
                 ct0 = part.split("=", 1)[1]
-    elif args.key == "google-key":
-        config.set("google_api_key", value)
-        print("Google Custom Search API key configured")
-
-    elif args.key == "google-cx":
-        config.set("google_cx", value)
-        print("Google Custom Search Engine ID configured")
-
     elif len(value.split()) == 2 and "=" not in value:
         # Two separate values: AUTH_TOKEN CT0.
         parts = value.split()

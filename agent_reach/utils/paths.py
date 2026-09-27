@@ -202,7 +202,13 @@ def get_ytdlp_config_dir() -> Path:
     """
 
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
-    config_home = Path(xdg_config_home) if xdg_config_home else home_dir() / ".config"
+    if xdg_config_home:
+        config_home = Path(xdg_config_home)
+    else:
+        # yt-dlp intentionally honors HOME on Windows; Python Path.home()
+        # normally follows USERPROFILE there. Preserve normal POSIX semantics.
+        base_home = home_dir() if sys.platform == "win32" else Path.home()
+        config_home = base_home / ".config"
     return config_home / "yt-dlp"
 
 
