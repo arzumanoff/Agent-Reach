@@ -6,16 +6,20 @@ Channel registry — lists all supported platforms for doctor checks.
 from typing import List, Optional
 
 # Import all channels
+from .arxiv import ArxivChannel
 from .base import Channel
 from .bilibili import BilibiliChannel
 from .boss import BossChannel
 from .exa_search import ExaSearchChannel
 from .facebook import FacebookChannel
 from .github import GitHubChannel
+from .google_images import GoogleImagesChannel
+from .hackernews import HackerNewsChannel
 from .instagram import InstagramChannel
 from .linkedin import LinkedInChannel
 from .reddit import RedditChannel
 from .rss import RSSChannel
+from .tiktok import TikTokChannel
 from .twitter import TwitterChannel
 from .v2ex import V2EXChannel
 from .web import WebChannel
@@ -25,9 +29,11 @@ from .xueqiu import XueqiuChannel
 from .youtube import YouTubeChannel
 
 ALL_CHANNELS: List[Channel] = [
+    ArxivChannel(),
     GitHubChannel(),
     TwitterChannel(),
     YouTubeChannel(),
+    TikTokChannel(),
     RedditChannel(),
     FacebookChannel(),
     InstagramChannel(),
@@ -37,9 +43,11 @@ ALL_CHANNELS: List[Channel] = [
     BossChannel(),
     XiaoyuzhouChannel(),
     V2EXChannel(),
+    HackerNewsChannel(),
     XueqiuChannel(),
     RSSChannel(),
     ExaSearchChannel(),
+    GoogleImagesChannel(),
     WebChannel(),
 ]
 

@@ -7,6 +7,7 @@ import shlex
 import stat
 import sys
 import tempfile
+import warnings
 from pathlib import Path
 
 
@@ -62,7 +63,16 @@ def make_private_dir(path: str | Path) -> Path:
         try:
             ensure_no_symlink_path(target, "私密目录")
             if hasattr(os, "fchmod"):
-                os.fchmod(dir_fd, 0o700)
+                current_mode = stat.S_IMODE(os.fstat(dir_fd).st_mode)
+                if current_mode != 0o700:
+                    try:
+                        os.fchmod(dir_fd, 0o700)
+                    except PermissionError:
+                        warnings.warn(
+                            f"Unable to tighten permissions for {target} (current {oct(current_mode)})",
+                            RuntimeWarning,
+                            stacklevel=2,
+                        )
         finally:
             os.close(dir_fd)
     return target
@@ -192,7 +202,13 @@ def get_ytdlp_config_dir() -> Path:
     """
 
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
-    config_home = Path(xdg_config_home) if xdg_config_home else Path.home() / ".config"
+    if xdg_config_home:
+        config_home = Path(xdg_config_home)
+    else:
+        # yt-dlp intentionally honors HOME on Windows; Python Path.home()
+        # normally follows USERPROFILE there. Preserve normal POSIX semantics.
+        base_home = home_dir() if sys.platform == "win32" else Path.home()
+        config_home = base_home / ".config"
     return config_home / "yt-dlp"
 
 

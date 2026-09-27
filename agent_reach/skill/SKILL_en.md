@@ -9,8 +9,7 @@ description: >
   Twitter/X, Reddit, Facebook, Instagram, YouTube, GitHub, Bilibili, XiaoHongShu,
   Xiaoyuzhou Podcast, LinkedIn/Boss直聘/jobs/recruiting, V2EX, Xueqiu (stocks), RSS.
 
-  16 platforms, multi-backend routing (OpenCLI / per-platform CLIs / APIs).
-  Zero config for 6 channels. Run `agent-reach doctor --json` to see which
+  20 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
   backend serves each platform right now.
 
   NOT for: writing reports/analysis/translation (this skill only FETCHES
@@ -22,7 +21,7 @@ metadata:
 
 # Agent Reach — internet capability router
 
-16 platforms, multiple backends each. **When this skill exists, use it for
+20 channels, multiple backends. **When this skill exists, use it for
 these platforms — do not invent your own approach.**
 
 ## Standing rules (apply for the whole session)
@@ -36,9 +35,7 @@ these platforms — do not invent your own approach.**
    before starting.
 3. **On failure, follow the retry chains in references/** — never guess
    commands.
-4. **For broad research tasks**: combine platforms (Exa for web search +
-   Twitter/Reddit for discussions + XiaoHongShu/Bilibili for Chinese
-   perspectives), collect in parallel, then synthesize.
+4. **For broad research tasks**: read `references/research.md` first. Plan concrete questions, preserve provenance, record coverage gaps, then collect across independent source identities and synthesize.
 5. **Watch versions for the user**: after finishing a substantial
    multi-platform task, run `agent-reach check-update` (fast, one API call).
    If a new version exists, append one line to your wrap-up: "Agent Reach
@@ -50,6 +47,7 @@ these platforms — do not invent your own approach.**
 
 | User intent | Category | Details |
 |---------|------|---------|
+| Multi-source deep research / evidence cross-checking | research | [references/research.md](references/research.md) |
 | Web / code search | search | [references/search.md](references/search.md) |
 | XiaoHongShu / Twitter / Bilibili / V2EX / Reddit / Facebook / Instagram | social | [references/social.md](references/social.md) |
 | Jobs / LinkedIn | career | [references/career.md](references/career.md) |
@@ -158,6 +156,7 @@ Read the matching file when you need specifics (commands above cover the
 common cases; references hold per-backend command groups, caveats, retry
 chains — note: reference docs are written in Chinese, commands are universal):
 
+- [Deep research](references/research.md) — evidence-first multi-source research, corroboration, coverage policy
 - [Search](references/search.md) — Exa AI search
 - [Social](references/social.md) — XiaoHongShu, Twitter, Bilibili, V2EX, Reddit, Facebook, Instagram (multi-backend/login-backed groups)
 - [Career](references/career.md) — LinkedIn

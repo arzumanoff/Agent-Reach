@@ -31,12 +31,17 @@ _BOSS_AGENT_CLI_SOURCE = (
 _MAX_CONFIGURE_VALUE_CHARS = 1024 * 1024
 _SENSITIVE_CONFIG_KEYS = {
     "proxy",
+    "exa-key",
     "github-token",
     "groq-key",
     "openai-key",
+    "google-key",
+    "google-cx",
     "twitter-cookies",
     "xhs-cookies",
 }
+
+_POSITIONAL_SECRET_DENY_KEYS = {"exa-key", "google-key", "google-cx"}
 
 
 def _ensure_utf8_console():
@@ -107,7 +112,7 @@ def main():
     # ── configure ──
     p_conf = sub.add_parser("configure", help="Set a config value or auto-extract from browser")
     p_conf.add_argument("key", nargs="?", default=None,
-                        choices=["proxy", "github-token", "groq-key", "openai-key",
+                        choices=["proxy", "exa-key", "github-token", "groq-key", "openai-key", "google-key", "google-cx",
                                  "twitter-cookies", "youtube-cookies",
                                  "xhs-cookies"],
                         help="What to configure (omit if using --from-browser)")
@@ -1397,7 +1402,16 @@ def _read_configure_value(args) -> str:
         return value.rstrip("\r\n")
 
     if values:
-        if getattr(args, "key", None) in _SENSITIVE_CONFIG_KEYS:
+        key = getattr(args, "key", None)
+        if key in _POSITIONAL_SECRET_DENY_KEYS:
+            print(
+                "Sensitive API credentials cannot be passed positionally because "
+                "shell history and process listings may expose them; omit the value "
+                "for a hidden prompt or use --stdin.",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+        if key in _SENSITIVE_CONFIG_KEYS:
             print(
                 "Warning: positional secrets are deprecated because shell history "
                 "and process listings may expose them; omit the value for a hidden "
@@ -1571,6 +1585,18 @@ def _cmd_configure(args):
     elif args.key == "xhs-cookies":
         if not _configure_xhs_cookies(value):
             raise SystemExit(1)
+
+    elif args.key == "exa-key":
+        config.set("exa_api_key", value)
+        print("Exa API key configured (not live-probed)")
+
+    elif args.key == "google-key":
+        config.set("google_api_key", value)
+        print("Google Custom Search API key configured")
+
+    elif args.key == "google-cx":
+        config.set("google_cx", value)
+        print("Google Custom Search Engine ID configured")
 
     elif args.key == "github-token":
         config.set("github_token", value)
