@@ -34,3 +34,19 @@ def test_google_image_search_returns_structured_results():
     assert results[0]["title"] == "PCB"
     assert results[0]["width"] == 1000
     assert results[0]["context_url"] == "https://example/pcb"
+
+
+class InvalidItemsResponse(Response):
+    def read(self, n=-1):
+        return b'{"items": {"not": "a list"}}'
+
+
+def test_google_image_search_rejects_invalid_items_shape():
+    channel = GoogleImagesChannel()
+    with patch(
+        "agent_reach.channels.google_images.urllib.request.urlopen",
+        return_value=InvalidItemsResponse(),
+    ):
+        import pytest
+        with pytest.raises(ValueError, match="invalid items"):
+            channel.search("GPU PCB", Config(), limit=1)
