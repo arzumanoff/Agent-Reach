@@ -1,6 +1,6 @@
 # 搜索工具
 
-Agent Reach 的搜索层现在包含 Exa、Hacker News、ArXiv 和 Google Images。
+Agent Reach 的搜索层包含 Exa、Hacker News、ArXiv 和 Google Images。
 
 ## Exa 全网搜索
 
@@ -33,13 +33,13 @@ curl -s "https://hn.algolia.com/api/v1/search?query=QUERY&tags=story&hitsPerPage
 curl -s "https://hn.algolia.com/api/v1/search_by_date?query=QUERY&tags=story&hitsPerPage=5"
 ```
 
-Python/Agent Reach 内部可使用 `HackerNewsChannel.search()`、`get_item()`、
+Agent Reach 内部可使用 `HackerNewsChannel.search()`、`get_item()`、
 `get_stories()` 和 `get_user()`。社区讨论只能作为 community evidence；
 不要自动当成 primary source。
 
 ## ArXiv
 
-零配置，走公开 Atom API。适合论文、方法、benchmark 和学术 первоисточник。
+零配置，走公开 Atom API。适合论文、方法、benchmark 和学术原始来源。
 
 ```bash
 curl -s "https://export.arxiv.org/api/query?search_query=all:transformer&start=0&max_results=5"
@@ -59,23 +59,23 @@ agent-reach configure google-cx
 ```
 
 Research Edition 内部使用 `GoogleImagesChannel.search()`。结果图片本身是 artifact；
-在把图片当成 доказательство 前，应检查 `context_url`、来源页面 и provenance。
+在把图片当成证据前，应检查 `context_url`、来源页面和 provenance。
 
 ## GitHub 搜索
 
-仓库搜索不要把多词 query 整体包进 кавычки，否则 `gh` 会 превратить его в точную фразу。
+仓库搜索不要把多词 query 整体包进引号，否则 `gh` 会把它当成精确短语。
 
 ```bash
 gh search repos arxiv api python --sort stars --limit 10
 gh search code "def transcribe_audio" --language python
 ```
 
-## Как выбирать источник
+## 选型建议
 
-| Задача | Сначала |
+| 场景 | 首选 |
 |---|---|
-| Общий веб-поиск | Exa |
-| Технические/стартап обсуждения | Hacker News |
-| Научные утверждения | ArXiv |
-| Реальные фото/PCB/продукты | Google Images + context page |
-| Репозитории/коммиты/код | GitHub |
+| 通用网页发现 | Exa |
+| 技术/创业社区讨论 | Hacker News |
+| 学术与方法论证据 | ArXiv |
+| 实物图片、PCB、产品照片 | Google Images + context page |
+| 仓库、commit、代码 | GitHub |
