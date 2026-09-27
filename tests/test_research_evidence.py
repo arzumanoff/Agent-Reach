@@ -97,3 +97,28 @@ def test_store_merges_duplicate_page_evidence_deterministically():
     assert merged.metadata["b"] == 2
     assert merged.metadata["seen_sources"] == ["exa", "web"]
     assert merged.artifact_refs[0].kind == ArtifactKind.DOCUMENT
+
+
+def test_nondefault_port_remains_significant():
+    a = EvidenceItem(
+        source="web",
+        canonical_url="https://example.test:80/a",
+        claim="Fact",
+    )
+    b = EvidenceItem(
+        source="web",
+        canonical_url="https://example.test/a",
+        claim="Fact",
+    )
+    assert a.evidence_id != b.evidence_id
+
+
+def test_canonical_url_rejects_embedded_credentials():
+    import pytest
+
+    with pytest.raises(ValueError, match="credentials"):
+        EvidenceItem(
+            source="web",
+            canonical_url="https://user:secret@example.test/a",
+            claim="Fact",
+        )
