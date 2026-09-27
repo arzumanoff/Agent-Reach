@@ -32,7 +32,12 @@ class ResearchRun:
         kinds = source_kinds or {}
         for question in self.plan.questions:
             evidence_ids = self.question_evidence.setdefault(question.text, set())
-            for source in question.preferred_sources:
+            requested_sources = (
+                question.preferred_sources
+                if question.preferred_sources
+                else tuple(sorted(searches))
+            )
+            for source in requested_sources:
                 search = searches.get(source)
                 prefix = f"{question.text} :: {source}"
                 if search is None:
