@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -10,6 +10,12 @@ class ResearchQuestion:
     text: str
     preferred_sources: tuple[str, ...] = ()
     require_primary_source: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.text.strip():
+            raise ValueError("research question must not be empty")
+        if any(not source.strip() for source in self.preferred_sources):
+            raise ValueError("preferred source names must not be empty")
 
 
 @dataclass(frozen=True)
