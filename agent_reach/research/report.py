@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from .models import EvidenceState
-from .policy import evaluate_policy
+from .models import EvidenceState, SourceKind
+from .policy import evaluate_policy, source_identity
 from .runner import ResearchRun
 from .store import EvidenceStore
 from .verification import derive_state
@@ -45,7 +45,27 @@ def render_markdown(run: ResearchRun) -> str:
     for reason in policy.reasons:
         lines.append(f"- Gap: {reason}")
 
-    lines.extend(["", "## Evidence", ""])
+    lines.extend(["", "## Question coverage", ""])
+    for question in run.plan.questions:
+        ids = run.question_evidence.get(question.text, set())
+        items = [
+            item
+            for evidence_id in sorted(ids)
+            if (item := run.store.get(evidence_id)) is not None
+        ]
+        identities = {source_identity(item) for item in items}
+        primary_count = sum(
+            item.source_kind == SourceKind.PRIMARY for item in items
+        )
+        lines.append(f"### {question.text}")
+        lines.append(f"- Evidence items: {len(items)}")
+        lines.append(f"- Independent source identities: {len(identities)}")
+        lines.append(f"- Primary evidence items: {primary_count}")
+        if question.require_primary_source:
+            lines.append("- Primary source required: yes")
+        lines.append("")
+
+    lines.extend(["## Evidence", ""])
     for item in run.store.all():
         item_state = derive_state(item, run.store).value
         title = item.title or item.source_id or item.source
@@ -59,6 +79,14 @@ def render_markdown(run: ResearchRun) -> str:
                 f"Source: {item.source} | Locator: {provenance}",
             ]
         )
+        if item.corroborates:
+            lines.append(
+                "- Corroborates: " + ", ".join(sorted(item.corroborates))
+            )
+        if item.contradicts:
+            lines.append(
+                "- Contradicts: " + ", ".join(sorted(item.contradicts))
+            )
         for artifact in item.artifact_refs:
             lines.append(
                 f"- Artifact: {artifact.kind.value} | {artifact.locator}"
