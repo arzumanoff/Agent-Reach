@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -11,18 +12,11 @@ from agent_reach.channels.google_images import GoogleImagesChannel
 from agent_reach.channels.hackernews import HackerNewsChannel
 from agent_reach.config import Config
 
-from .github_live import github_repository_search
 from .models import SourceKind
-from .runner import SearchFn
-
-DEFAULT_SOURCE_KINDS = {
-    "arxiv": SourceKind.PRIMARY,
-    "hackernews": SourceKind.COMMUNITY,
-    "duckduckgo": SourceKind.SECONDARY,
-    "exa": SourceKind.SECONDARY,
-    "google_images": SourceKind.SECONDARY,
-    "github": SourceKind.PRIMARY,
-}
+from .orchestrator import execute_research
+from .planner import ResearchPlan
+from .runner import ResearchRun, SearchFn
+from .policy import PolicyResult
 
 
 def arxiv_search(channel: ArxivChannel | None = None) -> SearchFn:
@@ -47,21 +41,16 @@ def exa_rest_search(config: Config) -> SearchFn:
     def search(query: str, limit: int) -> Sequence[Mapping[str, Any]]:
         from agent_reach import exa_api
 
-        if not isinstance(query, str) or not query.strip():
-            raise ValueError("Exa search query must not be empty")
-        limit = max(1, min(int(limit), 100))
         key = exa_api.require_api_key(config)
         payload = {
             "query": query.strip(),
             "type": "auto",
-            "numResults": limit,
+            "numResults": max(1, min(int(limit), 100)),
             "contents": {"highlights": True},
         }
         body = exa_api.request_json("search", payload, api_key=key)
         results = body.get("results")
-        if not isinstance(results, list):
-            return []
-        return [item for item in results if isinstance(item, Mapping)]
+        return results if isinstance(results, list) else []
 
     return search
 
@@ -73,27 +62,39 @@ def duckduckgo_search(
     return lambda query, limit: ch.search(query, limit=limit)
 
 
-def build_live_sources(
-    config: Config,
+def build_live_searches(
+    config: Config | None = None,
 ) -> tuple[dict[str, SearchFn], dict[str, SourceKind]]:
-    """Build the live search registry from locally available/configured backends."""
+    """Build the safe structured search set available in the current environment."""
+    cfg = config or Config(read_only=True)
     searches: dict[str, SearchFn] = {
         "arxiv": arxiv_search(),
         "hackernews": hackernews_search(),
-        "github": github_repository_search(config),
+    }
+    kinds: dict[str, SourceKind] = {
+        "arxiv": SourceKind.PRIMARY,
+        "hackernews": SourceKind.COMMUNITY,
     }
 
-    if DuckDuckGoSearchChannel().check(config)[0] != "off":
+    if cfg.get("exa_api_key"):
+        searches["exa"] = exa_rest_search(cfg)
+        kinds["exa"] = SourceKind.SECONDARY
+
+    if cfg.get("google_api_key") and cfg.get("google_cx"):
+        searches["google_images"] = google_images_search(cfg)
+        kinds["google_images"] = SourceKind.SECONDARY
+
+    if importlib.util.find_spec("ddgs") is not None:
         searches["duckduckgo"] = duckduckgo_search()
+        kinds["duckduckgo"] = SourceKind.SECONDARY
 
-    if config.get("exa_api_key"):
-        searches["exa"] = exa_rest_search(config)
+    return searches, kinds
 
-    if config.get("google_api_key") and config.get("google_cx"):
-        searches["google_images"] = google_images_search(config)
 
-    source_kinds = {
-        source: DEFAULT_SOURCE_KINDS[source]
-        for source in searches
-    }
-    return searches, source_kinds
+def execute_live_research(
+    plan: ResearchPlan,
+    config: Config | None = None,
+) -> tuple[ResearchRun, PolicyResult, str]:
+    """Execute a plan against currently available structured research backends."""
+    searches, kinds = build_live_searches(config)
+    return execute_research(plan, searches, kinds)
