@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from agent_reach.channels.arxiv import ArxivChannel
+from agent_reach.channels.duckduckgo import DuckDuckGoSearchChannel
 from agent_reach.channels.google_images import GoogleImagesChannel
 from agent_reach.channels.hackernews import HackerNewsChannel
 from agent_reach.config import Config
@@ -52,3 +53,10 @@ def exa_rest_search(config: Config) -> SearchFn:
         return [item for item in results if isinstance(item, Mapping)]
 
     return search
+
+
+def duckduckgo_search(
+    channel: DuckDuckGoSearchChannel | None = None,
+) -> SearchFn:
+    ch = channel or DuckDuckGoSearchChannel()
+    return lambda query, limit: ch.search(query, limit=limit)
