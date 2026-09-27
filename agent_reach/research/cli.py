@@ -60,7 +60,7 @@ def run_document(payload: dict[str, Any]) -> str:
                 evidence_from_result(source, result, source_kind=kind)
             )
             for question in plan.questions:
-                if source in question.preferred_sources:
+                if not question.preferred_sources or source in question.preferred_sources:
                     run.question_evidence.setdefault(question.text, set()).add(
                         evidence_id
                     )
