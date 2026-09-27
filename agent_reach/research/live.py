@@ -11,6 +11,7 @@ from agent_reach.channels.google_images import GoogleImagesChannel
 from agent_reach.channels.hackernews import HackerNewsChannel
 from agent_reach.config import Config
 
+from .github_live import github_repository_search
 from .models import SourceKind
 from .runner import SearchFn
 
@@ -20,6 +21,7 @@ DEFAULT_SOURCE_KINDS = {
     "duckduckgo": SourceKind.SECONDARY,
     "exa": SourceKind.SECONDARY,
     "google_images": SourceKind.SECONDARY,
+    "github": SourceKind.PRIMARY,
 }
 
 
@@ -78,6 +80,7 @@ def build_live_sources(
     searches: dict[str, SearchFn] = {
         "arxiv": arxiv_search(),
         "hackernews": hackernews_search(),
+        "github": github_repository_search(config),
     }
 
     if DuckDuckGoSearchChannel().check(config)[0] != "off":
