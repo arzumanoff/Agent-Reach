@@ -11,7 +11,7 @@ description: >
   LinkedIn/领英/Boss直聘/招聘/求职/jobs, YouTube, GitHub code search, 小宇宙播客,
   雪球/股票行情, RSS feeds, or any web URL.
 
-  20 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
+  21 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
   backend serves each platform right now.
 
   NOT for: 与互联网检索无关的纯离线写作/翻译任务；发帖/评论/点赞等写操作；
@@ -25,7 +25,7 @@ metadata:
 
 # Agent Reach — 互联网能力路由器
 
-20 个 channel、多后端。**本 skill 存在时必须用它访问这些平台，不要自己发明方案。**
+21 个 channel、多后端。**本 skill 存在时必须用它访问这些平台，不要自己发明方案。**
 
 ## 常驻规则（全程适用）
 
@@ -48,7 +48,7 @@ metadata:
 | 用户意图 | 分类 | 详细文档 |
 |---------|------|---------|
 | 多源深度调研/证据交叉验证 | research | [references/research.md](references/research.md) |
-| 网页/代码/学术/图片搜索（Exa/HN/ArXiv/Google Images） | search | [references/search.md](references/search.md) |
+| 网页/代码/学术/图片搜索（Exa/DDG/HN/ArXiv/Google Images） | search | [references/search.md](references/search.md) |
 | 小红书/推特/B站/V2EX/Reddit/Facebook/Instagram/TikTok | social | [references/social.md](references/social.md) |
 | 招聘/职位/LinkedIn/Boss直聘 | career | [references/career.md](references/career.md) |
 | GitHub/代码 | dev | [references/dev.md](references/dev.md) |
@@ -163,7 +163,7 @@ conda run -n dl agent-reach doctor --json
 根据用户需求，阅读对应的详细文档：
 
 - [深度调研](references/research.md) — evidence-first 多源调研、交叉验证、coverage policy
-- [搜索工具](references/search.md) — Exa, Hacker News, ArXiv, Google Images
+- [搜索工具](references/search.md) — Exa, DuckDuckGo, Hacker News, ArXiv, Google Images
 - [社交媒体](references/social.md) — 小红书, Twitter, B站, V2EX, Reddit, Facebook, Instagram, TikTok（多后端/登录态命令组）
 - [职场招聘](references/career.md) — LinkedIn, Boss直聘
 - [开发工具](references/dev.md) — GitHub CLI
