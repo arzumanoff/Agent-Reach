@@ -54,3 +54,37 @@ def test_two_records_from_same_channel_without_urls_count_once():
     result = evaluate_policy(plan, store)
     assert result.independent_sources == 1
     assert result.satisfied is False
+
+
+def test_primary_requirement_is_checked_per_question():
+    plan = ResearchPlan(
+        topic="two questions",
+        questions=(
+            ResearchQuestion("q1", ("arxiv",), require_primary_source=True),
+            ResearchQuestion("q2", ("reddit",), require_primary_source=True),
+        ),
+        minimum_independent_sources=1,
+    )
+    primary = EvidenceItem(
+        source="arxiv",
+        source_id="paper:1",
+        claim="primary",
+        source_kind=SourceKind.PRIMARY,
+    )
+    community = EvidenceItem(
+        source="reddit",
+        source_id="thread:1",
+        claim="community",
+        source_kind=SourceKind.COMMUNITY,
+    )
+    store = EvidenceStore([primary, community])
+    result = evaluate_policy(
+        plan,
+        store,
+        {
+            "q1": {primary.evidence_id},
+            "q2": {community.evidence_id},
+        },
+    )
+    assert result.satisfied is False
+    assert "question 'q2' requires primary-source evidence" in result.reasons
