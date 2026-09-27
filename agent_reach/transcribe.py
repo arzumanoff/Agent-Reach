@@ -315,11 +315,22 @@ def _is_youtube_url(url: str) -> bool:
     return host_matches(candidate, "youtube.com", "youtu.be")
 
 
-def download_audio(url: str, out_dir: Path) -> Path:
+def download_audio(
+    url: str,
+    out_dir: Path,
+    *,
+    cookies_from_browser: str | None = None,
+) -> Path:
     """Download audio with yt-dlp into out_dir; return the resulting file path."""
     _assert_safe_public_url(url)
     _require("yt-dlp")
     template = out_dir / "source.%(ext)s"
+    cookie_source = youtube_cookie_source(cookies_from_browser)
+    cookie_args = (
+        ["--cookies-from-browser", cookie_source]
+        if cookie_source
+        else []
+    )
     _run(
         [
             "yt-dlp",
@@ -329,6 +340,7 @@ def download_audio(url: str, out_dir: Path) -> Path:
             "--audio-quality",
             "0",
             "--no-playlist",
+            *cookie_args,
             "--max-filesize",
             str(MAX_SOURCE_BYTES),
             "-o",
@@ -517,7 +529,16 @@ def _transcribe_in_dir(source: str, order: List[str], cfg: Config, work_dir: Pat
     if src_path.is_file():
         audio = src_path
     else:
-        audio = download_audio(source, work_dir)
+        cookie_source = (
+            cfg.get("youtube_cookies_from")
+            if _is_youtube_url(source)
+            else None
+        )
+        audio = download_audio(
+            source,
+            work_dir,
+            cookies_from_browser=cookie_source,
+        )
 
     _require_size_at_most(audio, MAX_SOURCE_BYTES, "source")
     _require_duration_within_budget(audio)
