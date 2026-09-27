@@ -156,6 +156,8 @@ class HackerNewsChannel(Channel):
                 continue  # 单条拉取失败不拖垮整个列表
             if not item:
                 continue  # 已删除的 item，Firebase 返回 null
+            if not isinstance(item, dict):
+                continue
             results.append(self._story_summary(item))
         return results
 
