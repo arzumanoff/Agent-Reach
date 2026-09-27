@@ -736,8 +736,6 @@ def test_system_install_uses_ytdlp_first_user_config(
     """Installer writes the first config directory that real yt-dlp reads."""
     import shutil
 
-    import agent_reach.utils.paths as paths
-
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.delenv("XDG_CONFIG_HOME")
     monkeypatch.setattr(
