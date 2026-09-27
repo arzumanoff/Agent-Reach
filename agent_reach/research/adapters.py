@@ -8,6 +8,7 @@ from typing import Any
 from agent_reach.utils.text import scrub_url_credentials
 
 from .artifacts import ArtifactKind, ArtifactRef
+from .artifacts import ArtifactKind, ArtifactRef
 from .models import EvidenceItem, SourceKind
 
 
@@ -22,6 +23,7 @@ def evidence_from_result(
     metadata: dict[str, Any] = {
         "raw_keys": tuple(sorted(str(k) for k in result)),
     }
+    artifact_refs: tuple[ArtifactRef, ...] = ()
     artifacts: list[ArtifactRef] = []
 
     if source == "google_images":
