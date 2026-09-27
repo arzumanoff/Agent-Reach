@@ -23,10 +23,12 @@ jobs:
           cache: pip
       - name: Install
         run: python -m pip install -e ".[dev,all]"
+      - name: Compile/import smoke
+        run: python scripts/check_research_edition.py
       - name: Pytest
         run: python -m pytest -q
       - name: Ruff
-        run: python -m ruff check agent_reach tests
+        run: python -m ruff check agent_reach tests scripts
       - name: Mypy
         run: python -m mypy agent_reach
 
