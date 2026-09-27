@@ -7,15 +7,15 @@ description: >
 
   Also MUST USE when user mentions any platform or shares any URL/链接:
   小红书/xiaohongshu/xhs, Twitter/推特/X, B站/bilibili, Reddit, Facebook,
-  Instagram, V2EX, LinkedIn/领英/Boss直聘/招聘/求职/jobs, YouTube, GitHub code search, 小宇宙播客,
+  Instagram, V2EX, Hacker News, ArXiv, TikTok, Google 图片搜索,
+  LinkedIn/领英/Boss直聘/招聘/求职/jobs, YouTube, GitHub code search, 小宇宙播客,
   雪球/股票行情, RSS feeds, or any web URL.
 
-  16 platforms, multi-backend routing (OpenCLI / per-platform CLIs / APIs).
-  Zero config for 6 channels. Run `agent-reach doctor --json` to see which
+  21 channels, multi-backend routing (OpenCLI / per-platform CLIs / APIs). Run `agent-reach doctor --json` to see which
   backend serves each platform right now.
 
-  NOT for: 写报告/数据分析/翻译等内容加工（本 skill 只负责从互联网获取内容）；
-  发帖/评论/点赞等写操作；已有专门 skill 的平台（先用专门 skill）。
+  NOT for: 与互联网检索无关的纯离线写作/翻译任务；发帖/评论/点赞等写操作；
+  已有专门 skill 的平台（先用专门 skill）。深度调研可以包含证据整理、交叉验证和报告输出。
 
   【路由方式】SKILL.md 包含路由表和常用命令，复杂场景需按需阅读对应分类的 references/*.md。
   分类：search / social (小红书/推特/B站/V2EX/Reddit/Facebook/Instagram) / career(LinkedIn/Boss直聘) / dev(github) / web(网页/文章/RSS) / video(YouTube/B站/播客) / finance(雪球/股票)。
@@ -25,7 +25,7 @@ metadata:
 
 # Agent Reach — 互联网能力路由器
 
-16 平台、多后端。**本 skill 存在时必须用它访问这些平台，不要自己发明方案。**
+21 个 channel、多后端。**本 skill 存在时必须用它访问这些平台，不要自己发明方案。**
 
 ## 常驻规则（全程适用）
 
@@ -36,7 +36,7 @@ metadata:
    按对应 reference 的「体检与恢复」runbook 重新确认（如 career.md 的 Boss直聘 CDP 排查）。
 2. **声明你在用什么**：开始干活前说一句「使用 agent-reach 的 X 平台 / Y 后端」。
 3. **失败按 references 里的重试链处理**，不要瞎猜命令。
-4. **全网调研类任务**：组合多平台（Exa 搜索 + Twitter/Reddit 看讨论 + 小红书/B站看中文场景），并行收集再汇总。
+4. **全网调研类任务**：先读取 `references/research.md`，按 evidence-first 流程规划问题、保留 provenance、记录 coverage gaps，再组合多平台并行收集和交叉验证。
 5. **替用户盯版本**：完成一次较大的调研/多平台任务后，顺手跑
    `agent-reach check-update`（很快，一个 API 调用）。有新版就在收尾汇报里附一句：
    「Agent Reach 有新版 vX.Y.Z，复制这句话给我即可更新：帮我更新 Agent Reach：
@@ -47,8 +47,9 @@ metadata:
 
 | 用户意图 | 分类 | 详细文档 |
 |---------|------|---------|
-| 网页搜索/代码搜索 | search | [references/search.md](references/search.md) |
-| 小红书/推特/B站/V2EX/Reddit/Facebook/Instagram | social | [references/social.md](references/social.md) |
+| 多源深度调研/证据交叉验证 | research | [references/research.md](references/research.md) |
+| 网页/代码/学术/图片搜索（Exa/DDG/HN/ArXiv/Google Images） | search | [references/search.md](references/search.md) |
+| 小红书/推特/B站/V2EX/Reddit/Facebook/Instagram/TikTok | social | [references/social.md](references/social.md) |
 | 招聘/职位/LinkedIn/Boss直聘 | career | [references/career.md](references/career.md) |
 | GitHub/代码 | dev | [references/dev.md](references/dev.md) |
 | 网页/文章/RSS | web | [references/web.md](references/web.md) |
@@ -65,7 +66,7 @@ mcporter call exa.web_search_exa query="query" numResults=5
 curl -s "https://r.jina.ai/URL"
 
 # GitHub 搜索
-gh search repos "query" --sort stars --limit 10
+gh search repos query --sort stars --limit 10
 
 # YouTube 字幕（注意：B站不要用 yt-dlp，失败重试链见 video.md）
 yt-dlp --write-sub --write-auto-sub --skip-download -o "/tmp/%(id)s" "URL"
@@ -75,6 +76,15 @@ curl -s "https://www.v2ex.com/api/topics/hot.json" -H "User-Agent: agent-reach/1
 
 # B站搜索（bili-cli，无需登录）
 bili search "query" --type video -n 5
+
+# Hacker News 搜索（Algolia，无 key）
+curl -s "https://hn.algolia.com/api/v1/search?query=QUERY&tags=story&hitsPerPage=5"
+
+# ArXiv 论文搜索（无 key）
+curl -s "https://export.arxiv.org/api/query?search_query=all:QUERY&start=0&max_results=5"
+
+# TikTok 单条公开视频读取（搜索/主页需要 OpenCLI）
+yt-dlp --dump-single-json "TIKTOK_URL"
 ```
 
 ## 需登录态的平台（按 doctor 的 active_backend 选命令）
@@ -152,8 +162,9 @@ conda run -n dl agent-reach doctor --json
 
 根据用户需求，阅读对应的详细文档：
 
-- [搜索工具](references/search.md) — Exa AI 搜索
-- [社交媒体](references/social.md) — 小红书, Twitter, B站, V2EX, Reddit, Facebook, Instagram（多后端/登录态命令组）
+- [深度调研](references/research.md) — evidence-first 多源调研、交叉验证、coverage policy
+- [搜索工具](references/search.md) — Exa, DuckDuckGo, Hacker News, ArXiv, Google Images
+- [社交媒体](references/social.md) — 小红书, Twitter, B站, V2EX, Reddit, Facebook, Instagram, TikTok（多后端/登录态命令组）
 - [职场招聘](references/career.md) — LinkedIn, Boss直聘
 - [开发工具](references/dev.md) — GitHub CLI
 - [网页阅读](references/web.md) — Jina Reader, RSS
