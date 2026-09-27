@@ -190,6 +190,8 @@ class ArxivChannel(Channel):
         Returns:
             list of dicts with keys: title, authors, summary, arxiv_id, link, published, categories
         """
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query must not be empty")
         if limit < 0:
             raise ValueError("limit must be non-negative")
         limit = min(limit, 100)
@@ -209,6 +211,10 @@ class ArxivChannel(Channel):
         Returns:
             dict with keys: title, authors, summary, arxiv_id, link, published, categories
         """
+        if not isinstance(arxiv_id, str) or not arxiv_id.strip():
+            raise ValueError("arxiv_id must not be empty")
+        arxiv_id = arxiv_id.strip()
+
         # Extract ID from URL if needed, then strip any version suffix.
         if "arxiv.org/abs/" in arxiv_id:
             arxiv_id = _strip_version(arxiv_id.split("/abs/")[-1])
