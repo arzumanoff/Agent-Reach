@@ -1,4 +1,9 @@
-from agent_reach.research.live import DEFAULT_SOURCE_KINDS, arxiv_search, build_live_sources, hackernews_search
+from agent_reach.research.live import (
+    DEFAULT_SOURCE_KINDS,
+    arxiv_search,
+    build_live_sources,
+    hackernews_search,
+)
 
 
 class Arxiv:
@@ -65,14 +70,6 @@ def test_build_live_sources_adds_configured_optional_sources(monkeypatch):
     searches, kinds = build_live_sources(config)
     assert {"arxiv", "hackernews", "duckduckgo", "exa", "google_images"} <= set(searches)
     assert kinds["duckduckgo"].value == "secondary"
-
-
-class Config:
-    def __init__(self, values=None):
-        self.values = values or {}
-
-    def get(self, key, default=None):
-        return self.values.get(key, default)
 
 
 def test_build_live_searches_respects_config(monkeypatch):
