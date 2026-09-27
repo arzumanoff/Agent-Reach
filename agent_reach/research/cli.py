@@ -9,6 +9,7 @@ from typing import Any
 
 from .live import execute_live_research
 from .models import SourceKind
+from .orchestrator import execute_research
 from .planner import ResearchPlan, ResearchQuestion
 from .report import render_markdown
 from .runner import ResearchRun
@@ -60,6 +61,21 @@ def run_document(payload: dict[str, Any]) -> str:
                     )
     run.coverage_gaps.extend(payload.get("coverage_gaps", ()))
     return render_markdown(run)
+
+
+def run_live_document(
+    payload: dict[str, Any],
+    searches,
+    source_kinds: dict[str, SourceKind] | None = None,
+) -> tuple[ResearchRun, str]:
+    """Execute an injected live-source plan and return the run plus Markdown."""
+    plan = _plan_from_payload(payload)
+    run, _policy, report = execute_research(
+        plan,
+        searches,
+        source_kinds or {},
+    )
+    return run, report
 
 
 def main(argv: list[str] | None = None) -> int:
