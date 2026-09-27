@@ -9,6 +9,8 @@ from hashlib import sha256
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
+from .artifacts import ArtifactRef
+
 
 class EvidenceState(str, Enum):
     CONFIRMED = "confirmed"
@@ -36,7 +38,7 @@ class EvidenceItem:
     published_at: str | None = None
     source_kind: SourceKind = SourceKind.UNKNOWN
     state: EvidenceState = EvidenceState.UNVERIFIED
-    artifact_refs: tuple[str, ...] = ()
+    artifact_refs: tuple[ArtifactRef, ...] = ()
     corroborates: tuple[str, ...] = ()
     contradicts: tuple[str, ...] = ()
     backend: str | None = None
