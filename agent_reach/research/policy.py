@@ -21,12 +21,17 @@ class PolicyResult:
 
 def source_identity(item: EvidenceItem) -> str:
     """Best available identity for conservative independence counting."""
+    publisher_id = item.metadata.get("publisher_id")
+    if isinstance(publisher_id, str) and publisher_id.strip():
+        return "publisher:" + publisher_id.strip().casefold()
     if item.canonical_url:
         try:
             host = (urlsplit(item.canonical_url).hostname or "").lower().rstrip(".")
         except ValueError:
             host = ""
         if host:
+            if host.startswith("www."):
+                host = host[4:]
             return "host:" + host
     return "channel:" + item.source
 
