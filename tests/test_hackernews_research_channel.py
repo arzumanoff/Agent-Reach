@@ -26,3 +26,15 @@ def test_story_list_rejects_wrong_shape():
     with patch("agent_reach.channels.hackernews._get_json", return_value={"bad": True}):
         with pytest.raises(ValueError, match="invalid JSON shape"):
             HackerNewsChannel().get_stories()
+
+
+def test_item_rejects_wrong_shape():
+    with patch("agent_reach.channels.hackernews._get_json", return_value=["bad"]):
+        with pytest.raises(ValueError, match="invalid JSON shape"):
+            HackerNewsChannel().get_item(1)
+
+
+def test_user_rejects_wrong_shape():
+    with patch("agent_reach.channels.hackernews._get_json", return_value=["bad"]):
+        with pytest.raises(ValueError, match="invalid JSON shape"):
+            HackerNewsChannel().get_user("user")

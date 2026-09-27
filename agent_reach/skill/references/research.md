@@ -59,3 +59,23 @@ Recommended source roles:
 - Hacker News / Reddit / X: community evidence, useful for discovery and independent reports but not automatically primary
 - Google Images: artifact discovery; verify the context page and provenance before treating an image as proof
 - TikTok / YouTube / Bilibili: media artifacts; distinguish what is visibly demonstrated from narrator claims
+
+
+## CLI workflow
+
+Prepare a JSON plan with topic, questions, preferred_sources, and policy limits, then run:
+
+```bash
+agent-reach-research --live plan.json --snapshot run.json -o report.md
+```
+
+This executes configured live sources, writes a human-readable Markdown report, and stores
+a replayable JSON snapshot. Re-render later without network access:
+
+```bash
+agent-reach-research run.json -o report-replayed.md
+```
+
+Use the snapshot as the audit artifact for important investigations. A replay must preserve
+evidence IDs, provenance, source kinds, typed artifacts, coverage gaps, query metrics, and
+question-to-evidence links.

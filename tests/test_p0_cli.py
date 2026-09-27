@@ -118,7 +118,7 @@ def test_setup_uses_hidden_prompts_for_secrets(monkeypatch, capsys):
     assert groq_secret not in output.err
 
 
-def test_configure_positional_secret_warns_to_use_safe_input(
+def test_configure_positional_secret_is_rejected(
     monkeypatch, capsys
 ):
     import agent_reach.config as config_module
@@ -132,11 +132,13 @@ def test_configure_positional_secret_warns_to_use_safe_input(
         ["agent-reach", "configure", "groq-key", "legacy-secret"],
     )
 
-    cli.main()
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
 
-    assert config.data["groq_api_key"] == "legacy-secret"
+    assert exc.value.code == 2
+    assert "groq_api_key" not in config.data
     error = capsys.readouterr().err
-    assert "deprecated" in error.lower()
+    assert "cannot be passed positionally" in error.lower()
     assert "--stdin" in error
     assert "legacy-secret" not in error
 
@@ -1394,3 +1396,42 @@ def test_uninstall_preserves_mcporter_entries_without_agent_reach_provenance(
     output = capsys.readouterr().out
     assert not any("remove" in call for call in calls)
     assert "来源无法证明" in output
+
+
+def test_youtube_cookie_source_is_validated(monkeypatch, capsys):
+    import agent_reach.config as config_module
+
+    config = _MemoryConfig()
+    monkeypatch.setattr(config_module, "Config", lambda: config)
+    monkeypatch.setattr(cli, "_configure_logging", lambda _verbose=False: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["agent-reach", "configure", "youtube-cookies", "Chrome + basictext : Profile 2"],
+    )
+
+    cli.main()
+
+    assert config.data["youtube_cookies_from"] == "chrome+BASICTEXT:Profile 2"
+    output = capsys.readouterr().out
+    assert "agent-reach transcribe" in output
+
+
+def test_youtube_cookie_source_rejects_invalid_browser(monkeypatch, capsys):
+    import agent_reach.config as config_module
+
+    config = _MemoryConfig()
+    monkeypatch.setattr(config_module, "Config", lambda: config)
+    monkeypatch.setattr(cli, "_configure_logging", lambda _verbose=False: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["agent-reach", "configure", "youtube-cookies", "netscape"],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
+
+    assert exc.value.code == 2
+    assert "youtube_cookies_from" not in config.data
+    assert "unsupported YouTube cookie browser" in capsys.readouterr().err

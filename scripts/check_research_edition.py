@@ -7,6 +7,14 @@ import importlib
 import sys
 
 MODULES = (
+    "agent_reach.channels.arxiv",
+    "agent_reach.channels.duckduckgo",
+    "agent_reach.channels.google_images",
+    "agent_reach.channels.hackernews",
+    "agent_reach.channels.tiktok",
+    "agent_reach.channels.youtube",
+    "agent_reach.exa_api",
+    "agent_reach.transcribe",
     "agent_reach.research",
     "agent_reach.research.adapters",
     "agent_reach.research.artifacts",

@@ -24,3 +24,14 @@ def test_question_rejects_empty_text_and_sources():
         ResearchQuestion("   ")
     with pytest.raises(ValueError):
         ResearchQuestion("q", ("github", " "))
+
+
+def test_plan_rejects_duplicate_question_text():
+    with pytest.raises(ValueError, match="unique"):
+        ResearchPlan(
+            topic="x",
+            questions=(
+                ResearchQuestion("same"),
+                ResearchQuestion("same"),
+            ),
+        )

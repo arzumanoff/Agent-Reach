@@ -1,93 +1,226 @@
 # Agent-Reach Research Edition
 
-This branch develops an evidence-first deep-research layer on top of Agent-Reach while keeping `main` close to upstream.
+Research Edition is an evidence-first deep-research layer built on Agent-Reach.
+The fork keeps `main` aligned with upstream and develops the research stack on
+`research-edition`.
 
-## Goals
-
-- Keep upstream Agent-Reach updateable.
-- Add research orchestration without coupling it to individual channels.
-- Treat retrieved web content as untrusted input.
-- Preserve source provenance from discovery through the final report.
-- Support Windows/Codex as a first-class environment.
-- Prefer multiple interchangeable backends over hard dependencies.
-
-## Proposed pipeline
+## Current pipeline
 
 ```text
-Research request
-  -> Research Planner
-  -> Query/Source Router
-  -> Agent-Reach channels/backends
-  -> Safety/Sanitization boundary
-  -> Evidence Collector
-  -> Normalization + Deduplication
-  -> Corroboration / Contradiction analysis
-  -> Evidence grading
-  -> Research report with provenance
+ResearchPlan
+  -> live source adapters
+  -> ResearchRun
+  -> EvidenceStore
+  -> exact + constrained semantic relations
+  -> corroboration / contradiction graph
+  -> source-identity + primary-source policy
+  -> provenance-rich Markdown report
+  -> replayable JSON serialization
 ```
 
-## Evidence model (v0)
+Retrieved internet content is treated as untrusted data, never as instructions.
 
-Each evidence item should retain at minimum:
+## Install the branch
 
-- canonical URL / source identifier
-- source/channel
-- title/author/date when available
-- retrieval timestamp
-- extracted claim or observation
-- direct vs. secondary source classification
-- supporting artifact references (image/video/code/thread)
-- corroborating and contradicting evidence IDs
-- confidence state: `confirmed`, `corroborated`, `single-source`, `unverified`, `contradicted`
-- retrieval/backend metadata
+```bash
+python -m pip install --upgrade   "https://github.com/arzumanoff/Agent-Reach/archive/refs/heads/research-edition.zip"
+```
 
-Confidence is an evidence state, not an LLM probability.
+Optional DuckDuckGo fallback:
 
-## Integration policy
+```bash
+python -m pip install -U ddgs
+```
 
-External PRs/forks are not bulk-merged. For every candidate:
+Then inspect available channels:
 
-1. Check whether current upstream already contains or supersedes it.
+```bash
+agent-reach doctor --json
+```
+
+## Research sources added by this branch
+
+- Hacker News — Firebase + Algolia, no key.
+- ArXiv — public Atom API, no key.
+- DuckDuckGo — optional maintained `ddgs` package.
+- TikTok — public-video read via yt-dlp, browser-backed search via OpenCLI.
+- Google Images — official Custom Search JSON API.
+- Exa — optional direct REST transport plus existing MCP fallback.
+
+Existing Agent-Reach sources remain available.
+
+## Configure optional search backends
+
+Exa direct REST:
+
+```bash
+agent-reach configure exa-key
+```
+
+Google Images:
+
+```bash
+agent-reach configure google-key
+agent-reach configure google-cx
+```
+
+Sensitive values are rejected when passed positionally. Use the hidden prompt
+or `--stdin`.
+
+## Replayable research
+
+`agent-reach-research` accepts either a prepared research document or the
+serialized schema emitted by `serialize_run()`.
+
+```bash
+agent-reach-research research.json
+agent-reach-research research.json -o report.md
+```
+
+The serialized schema preserves:
+
+- plan and research questions
+- evidence + stable IDs
+- source kind and derived evidence state
+- typed artifacts
+- corroboration / contradiction links
+- per-question evidence coverage
+- coverage gaps
+- attempted/successful query counts
+- discarded malformed results
+
+## Python orchestration
+
+```python
+from agent_reach.research import (
+    ResearchPlan,
+    ResearchQuestion,
+    SourceKind,
+    execute_research,
+)
+from agent_reach.research.live import (
+    arxiv_search,
+    hackernews_search,
+    duckduckgo_search,
+)
+
+plan = ResearchPlan(
+    topic="Example investigation",
+    questions=(
+        ResearchQuestion(
+            "What is independently documented?",
+            ("arxiv", "hackernews", "duckduckgo"),
+            require_primary_source=True,
+        ),
+    ),
+    minimum_independent_sources=2,
+)
+
+run, policy, report = execute_research(
+    plan,
+    {
+        "arxiv": arxiv_search(),
+        "hackernews": hackernews_search(),
+        "duckduckgo": duckduckgo_search(),
+    },
+    {
+        "arxiv": SourceKind.PRIMARY,
+        "hackernews": SourceKind.COMMUNITY,
+        "duckduckgo": SourceKind.SECONDARY,
+    },
+)
+
+print(report)
+```
+
+## Evidence states
+
+- `confirmed` — at least two independent source identities corroborate the
+  evidence cluster and at least one item is primary evidence.
+- `corroborated` — independent support exists but the stricter confirmed gate
+  is not met.
+- `single-source` — identifiable evidence with no independent corroboration.
+- `unverified` — insufficient stable provenance.
+- `contradicted` — explicit contradictory evidence is linked.
+
+These states describe the collected evidence, not absolute truth and not an LLM
+probability.
+
+## Independence rules
+
+Transport is not publisher identity.
+
+For example:
+
+- Exa + Jina reading the same publisher does not count as two sources.
+- Two URLs on the same publisher host count conservatively as one identity.
+- Hacker News discussion evidence is attributed to the HN thread, while its
+  linked article is stored separately.
+- Google Images evidence uses the context page for provenance and stores the
+  image itself as an `IMAGE` artifact.
+
+## Security boundaries
+
+- Retrieved text is explicitly delimited as untrusted content.
+- Research URL destinations can be fail-closed through the research guard.
+- Secret-bearing local paths are rejected.
+- API-key-bearing transport errors are scrubbed.
+- Positional CLI secrets are rejected.
+- Research Edition does not auto-execute instructions found in webpages,
+  posts, comments, transcripts, or papers.
+
+The large Grimdall PR was not bulk-merged because its static egress allowlist
+was already stale for the expanded source set and its default shadow mode still
+executes flagged commands. Research Edition keeps a narrower fail-closed
+research boundary instead.
+
+## Windows / Codex work
+
+The branch includes selected Windows/restricted-environment fixes:
+
+- yt-dlp config follows `HOME` consistently on Windows.
+- extensionless `rdt` wrapper detection.
+- restricted-sandbox chmod handling.
+- OpenCLI multi-profile extension detection.
+- MCP doctor probes are moved off the event loop.
+- YouTube JS-runtime comment parsing.
+- validated/scoped YouTube browser-cookie forwarding.
+
+## Quality gate
+
+The branch contains `.github/workflows/research-edition.yml` with:
+
+- Windows + Linux
+- Python 3.10 / 3.12 / 3.13
+- compile/import smoke gate
+- pytest
+- Ruff
+- mypy
+- wheel build
+- CLI smoke tests
+
+On forks, GitHub may require Actions to be enabled manually before the first
+workflow run appears.
+
+## Upstream integration policy
+
+Community PRs are never bulk-merged. For each candidate:
+
+1. Check whether upstream already contains or supersedes it.
 2. Review security and dependency impact.
 3. Port the smallest useful change.
-4. Add/retain tests.
+4. Add focused regression coverage.
 5. Keep channel-specific code outside the research core.
 
-Initial candidates to review include Hacker News, arXiv, research orchestration, prompt-injection/cookie guardrails, Exa REST/fallback search, Windows fixes, browser multi-profile handling, YouTube diagnostics, image search and additional video/social channels.
+Serenity was intentionally not imported wholesale: it is an 80-file,
+industry/finance application. Research Edition adopted the reusable concepts
+(typed evidence, coverage gaps, deterministic export, evidence-gated states)
+without importing its UI, valuation, or finance-specific stack.
 
-## Milestones
+## Non-goals for this iteration
 
-### R0 — Baseline and audit
-- Record upstream baseline.
-- Re-audit open PRs against current upstream.
-- Define stable research interfaces and threat model.
-
-### R1 — Research core
-- Planner contract.
-- Evidence schema/store.
-- Deduplication.
-- Provenance-preserving report output.
-
-### R2 — Verification
-- Corroboration and contradiction detection.
-- Primary-source preference.
-- Evidence grading.
-- Source diversity controls.
-
-### R3 — Channels/backends
-- Integrate selected missing sources and Windows fixes only after audit.
-- Add backend fallback/health semantics.
-
-### R4 — Codex skill
-- Natural-language deep-research entry point.
-- Progress/events.
-- Reproducible research runs.
-- Windows installation and diagnostics.
-
-## Non-goals for the first iteration
-
-- UI/dashboard.
 - Autonomous account actions.
-- Posting or modifying content on external platforms.
-- Blindly merging every community PR.
-- Replacing Agent-Reach's channel/backend architecture.
+- Posting/commenting/liking.
+- A dashboard/UI.
+- Trading or financial decision automation.
+- Treating community consensus as primary evidence.

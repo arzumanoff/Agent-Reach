@@ -7,6 +7,7 @@ from .orchestrator import execute_research
 from .planner import ResearchPlan, ResearchQuestion
 from .policy import PolicyResult, evaluate_policy
 from .runner import ResearchRun
+from .semantic import ClaimRelation, apply_relations
 from .store import EvidenceStore
 
 __all__ = [
@@ -19,8 +20,10 @@ __all__ = [
     "ResearchQuestion",
     "PolicyResult",
     "ResearchRun",
+    "ClaimRelation",
     "SourceKind",
     "evaluate_policy",
     "execute_research",
+    "apply_relations",
     "link_exact_claims",
 ]

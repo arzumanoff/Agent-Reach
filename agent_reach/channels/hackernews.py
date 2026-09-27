@@ -145,6 +145,8 @@ class HackerNewsChannel(Channel):
         ids = _get_json(f"{_FIREBASE_BASE}/{kind}stories.json") or []
         if not isinstance(ids, list):
             raise ValueError("Hacker News story list returned invalid JSON shape")
+        if not isinstance(ids, list):
+            raise ValueError("Hacker News story list returned invalid JSON shape")
         limit = max(0, min(int(limit), 100))
         results = []
         for item_id in ids[:limit]:
@@ -154,6 +156,8 @@ class HackerNewsChannel(Channel):
                 continue  # 单条拉取失败不拖垮整个列表
             if not item:
                 continue  # 已删除的 item，Firebase 返回 null
+            if not isinstance(item, dict):
+                continue
             results.append(self._story_summary(item))
         return results
 
@@ -259,6 +263,9 @@ class HackerNewsChannel(Channel):
         query = query.strip()
         limit = max(1, min(int(limit), 100))
 
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query must not be empty")
+        limit = max(1, min(int(limit), 100))
         if sort == "relevance":
             endpoint = "search"
         elif sort == "date":

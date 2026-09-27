@@ -54,3 +54,105 @@ def test_two_records_from_same_channel_without_urls_count_once():
     result = evaluate_policy(plan, store)
     assert result.independent_sources == 1
     assert result.satisfied is False
+
+
+def test_primary_requirement_is_checked_per_question():
+    plan = ResearchPlan(
+        topic="two questions",
+        questions=(
+            ResearchQuestion("q1", ("arxiv",), require_primary_source=True),
+            ResearchQuestion("q2", ("reddit",), require_primary_source=True),
+        ),
+        minimum_independent_sources=1,
+    )
+    primary = EvidenceItem(
+        source="arxiv",
+        source_id="paper:1",
+        claim="primary",
+        source_kind=SourceKind.PRIMARY,
+    )
+    community = EvidenceItem(
+        source="reddit",
+        source_id="thread:1",
+        claim="community",
+        source_kind=SourceKind.COMMUNITY,
+    )
+    store = EvidenceStore([primary, community])
+    result = evaluate_policy(
+        plan,
+        store,
+        {
+            "q1": {primary.evidence_id},
+            "q2": {community.evidence_id},
+        },
+    )
+    assert result.satisfied is False
+    assert "question 'q2' requires primary-source evidence" in result.reasons
+
+
+def test_source_diversity_is_checked_per_question():
+    plan = ResearchPlan(
+        topic="two questions",
+        questions=(
+            ResearchQuestion("q1", ("a", "b")),
+            ResearchQuestion("q2", ("c",)),
+        ),
+        minimum_independent_sources=2,
+    )
+    a = EvidenceItem(source="a", canonical_url="https://a.example/x", claim="a")
+    b = EvidenceItem(source="b", canonical_url="https://b.example/x", claim="b")
+    c = EvidenceItem(source="c", canonical_url="https://c.example/x", claim="c")
+    store = EvidenceStore([a, b, c])
+    result = evaluate_policy(
+        plan,
+        store,
+        {
+            "q1": {a.evidence_id, b.evidence_id},
+            "q2": {c.evidence_id},
+        },
+    )
+    assert result.satisfied is False
+    assert "question 'q2' needs 2 independent sources; have 1" in result.reasons
+
+
+def test_publisher_id_override_unifies_mirrors():
+    plan = ResearchPlan(
+        topic="x",
+        questions=(ResearchQuestion("q"),),
+        minimum_independent_sources=2,
+    )
+    a = EvidenceItem(
+        source="web",
+        canonical_url="https://docs.vendor.example/a",
+        claim="fact",
+        metadata={"publisher_id": "Vendor"},
+    )
+    b = EvidenceItem(
+        source="exa",
+        canonical_url="https://news.vendor.example/b",
+        claim="fact",
+        metadata={"publisher_id": "vendor"},
+    )
+    result = evaluate_policy(plan, EvidenceStore([a, b]))
+    assert result.independent_sources == 1
+    assert result.satisfied is False
+
+
+def test_www_prefix_does_not_create_fake_independence():
+    plan = ResearchPlan(
+        topic="x",
+        questions=(ResearchQuestion("q"),),
+        minimum_independent_sources=2,
+    )
+    a = EvidenceItem(
+        source="web",
+        canonical_url="https://www.example.test/a",
+        claim="fact",
+    )
+    b = EvidenceItem(
+        source="exa",
+        canonical_url="https://example.test/b",
+        claim="fact",
+    )
+    result = evaluate_policy(plan, EvidenceStore([a, b]))
+    assert result.independent_sources == 1

@@ -20,6 +20,6 @@ def execute_research(
     run = ResearchRun(plan)
     run.collect(searches, source_kinds)
     run.store = link_exact_claims(run.store)
-    policy = evaluate_policy(plan, run.store)
+    policy = evaluate_policy(plan, run.store, run.question_evidence)
     report = render_markdown(run)
     return run, policy, report

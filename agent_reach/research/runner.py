@@ -22,6 +22,7 @@ class ResearchRun:
     attempted_queries: int = 0
     successful_queries: int = 0
     discarded_results: int = 0
+    question_evidence: dict[str, set[str]] = field(default_factory=dict)
 
     def collect(
         self,
@@ -30,30 +31,39 @@ class ResearchRun:
     ) -> EvidenceStore:
         kinds = source_kinds or {}
         for question in self.plan.questions:
-            for source in question.preferred_sources:
+            evidence_ids = self.question_evidence.setdefault(question.text, set())
+            requested_sources = (
+                question.preferred_sources
+                if question.preferred_sources
+                else tuple(sorted(searches))
+            )
+            for source in requested_sources:
                 search = searches.get(source)
+                prefix = f"{question.text} :: {source}"
                 if search is None:
-                    self.coverage_gaps.append(f"{source}: no search adapter")
+                    self.coverage_gaps.append(f"{prefix}: no search adapter")
                     continue
 
                 self.attempted_queries += 1
                 try:
                     results = search(question.text, self.plan.max_results_per_source)
                 except Exception as exc:
-                    self.coverage_gaps.append(f"{source}: {type(exc).__name__}")
-                    continue
-
-                if not results:
                     self.coverage_gaps.append(
-                        f"{source}: no results for {question.text!r}"
+                        f"{prefix}: {type(exc).__name__}"
                     )
                     continue
 
-                self.successful_queries += 1
+                if not results:
+                    self.coverage_gaps.append(f"{prefix}: no results")
+                    continue
+
                 accepted = 0
                 for result in results:
                     if not isinstance(result, Mapping):
                         self.discarded_results += 1
+                        self.coverage_gaps.append(
+                            f"{prefix}: discarded invalid result"
+                        )
                         continue
                     try:
                         item = evidence_from_result(
@@ -61,13 +71,19 @@ class ResearchRun:
                             result,
                             source_kind=kinds.get(source, SourceKind.UNKNOWN),
                         )
-                    except (TypeError, ValueError):
+                    except (TypeError, ValueError) as exc:
                         self.discarded_results += 1
+                        self.coverage_gaps.append(
+                            f"{prefix}: discarded {type(exc).__name__}"
+                        )
                         continue
-                    self.store.add(item)
+                    evidence_id = self.store.add(item)
+                    evidence_ids.add(evidence_id)
                     accepted += 1
-                if accepted == 0:
-                    self.coverage_gaps.append(
-                        f"{source}: results contained no usable evidence for {question.text!r}"
-                    )
+
+                if accepted:
+                    self.successful_queries += 1
+                else:
+                    self.coverage_gaps.append(f"{prefix}: no usable results")
+
         return self.store
