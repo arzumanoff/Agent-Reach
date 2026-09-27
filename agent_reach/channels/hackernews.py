@@ -253,9 +253,8 @@ class HackerNewsChannel(Channel):
         params = urlencode(
             {"query": query, "hitsPerPage": max(1, limit), **({"tags": tags} if tags else {})}
         )
-        data = _get_json(f"{_ALGOLIA_BASE}/{endpoint}?{params}")
-        results = []
-        for hit in (data.get("hits") or [])[: max(1, limit)]:
+        data = _get_json(f"{_ALGOLIA_BASE}/{endpoint}?{params}")\n        if not isinstance(data, dict):\n            raise ValueError("Hacker News search returned invalid JSON shape")\n        hits = data.get("hits", [])\n        if not isinstance(hits, list):\n            raise ValueError("Hacker News search returned invalid hits")\n        results = []
+        for hit in hits[: max(1, limit)]:\n            if not isinstance(hit, dict):\n                continue
             object_id = hit.get("objectID", "")
             snippet = hit.get("story_text") or hit.get("comment_text") or hit.get("title") or ""
             results.append(
