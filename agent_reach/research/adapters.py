@@ -38,7 +38,7 @@ def evidence_from_result(
 
 
 def _claim_text(result: Mapping[str, Any]) -> str:
-    direct = _first(result, "summary", "snippet", "text", "title")
+    direct = _first(result, "summary", "snippet", "text")
     if direct:
         return str(direct)
     highlights = result.get("highlights")
@@ -46,7 +46,7 @@ def _claim_text(result: Mapping[str, Any]) -> str:
         clean = [str(value) for value in highlights if value]
         if clean:
             return " ".join(clean)
-    return ""
+    title = result.get("title")\n    return str(title) if title else ""
 
 
 def _first(result: Mapping[str, Any], *keys: str) -> Any:
