@@ -24,11 +24,12 @@ def test_arxiv_result_keeps_provenance():
 def test_hn_result_prefers_external_url_but_keeps_source_id():
     item = evidence_from_result(
         "hackernews",
-        {"id": 42, "title": "Discussion", "url": "https://example.test/post", "snippet": "claim"},
+        {"id": 42, "title": "Discussion", "url": "https://example.test/post", "hn_url": "https://news.ycombinator.com/item?id=42", "snippet": "claim"},
         source_kind=SourceKind.COMMUNITY,
     )
     assert item.source_id == "42"
-    assert item.canonical_url == "https://example.test/post"
+    assert item.canonical_url == "https://news.ycombinator.com/item?id=42"
+    assert item.metadata["external_url"] == "https://example.test/post"
 
 
 def test_exa_highlights_become_claim_when_text_is_absent():
