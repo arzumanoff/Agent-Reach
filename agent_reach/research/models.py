@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
 from typing import Any
+
+from .artifacts import ArtifactRef
 from urllib.parse import urlsplit, urlunsplit
 
 from .artifacts import ArtifactRef
