@@ -22,6 +22,7 @@ MODULES = (
     "agent_reach.research.contradictions",
     "agent_reach.research.corroboration",
     "agent_reach.research.guard",
+    "agent_reach.research.github_live",
     "agent_reach.research.live",
     "agent_reach.research.models",
     "agent_reach.research.orchestrator",
