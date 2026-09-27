@@ -7,6 +7,7 @@ from typing import Any
 
 from agent_reach.utils.text import scrub_url_credentials
 
+from .artifacts import ArtifactKind, ArtifactRef
 from .models import EvidenceItem, SourceKind
 
 
@@ -21,14 +22,23 @@ def evidence_from_result(
     metadata: dict[str, Any] = {
         "raw_keys": tuple(sorted(str(k) for k in result)),
     }
+    artifacts: list[ArtifactRef] = []
 
     if source == "google_images":
         canonical_url = _first(result, "context_url", "url")
-        if result.get("url"):
-            metadata["artifact_url"] = scrub_url_credentials(str(result["url"]))
+        artifact_url = result.get("url")
+        if artifact_url:
+            clean_artifact_url = scrub_url_credentials(str(artifact_url))
+            metadata["artifact_url"] = clean_artifact_url
+            artifacts.append(
+                ArtifactRef(
+                    kind=ArtifactKind.IMAGE,
+                    locator=clean_artifact_url,
+                    source=source,
+                    description=str(result.get("title") or "") or None,
+                )
+            )
     elif source == "hackernews":
-        # The claim comes from HN discussion/search metadata. Keep the HN thread
-        # as provenance and record the linked article separately.
         canonical_url = _first(result, "hn_url", "url")
         if result.get("url"):
             metadata["external_url"] = scrub_url_credentials(str(result["url"]))
@@ -37,6 +47,25 @@ def evidence_from_result(
 
     if canonical_url:
         canonical_url = scrub_url_credentials(str(canonical_url))
+
+    if source == "hackernews" and canonical_url:
+        artifacts.append(
+            ArtifactRef(
+                kind=ArtifactKind.THREAD,
+                locator=str(canonical_url),
+                source=source,
+                description=str(result.get("title") or "") or None,
+            )
+        )
+    elif source == "arxiv" and canonical_url:
+        artifacts.append(
+            ArtifactRef(
+                kind=ArtifactKind.DOCUMENT,
+                locator=str(canonical_url),
+                source=source,
+                description=str(result.get("title") or "") or None,
+            )
+        )
 
     source_id = _first(result, "id", "arxiv_id", "objectID")
     title = _first(result, "title")
@@ -55,6 +84,7 @@ def evidence_from_result(
         author=author,
         published_at=str(published) if published else None,
         source_kind=source_kind,
+        artifact_refs=tuple(artifacts),
         backend=backend,
         metadata=metadata,
     )
