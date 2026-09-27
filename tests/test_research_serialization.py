@@ -1,8 +1,8 @@
+import json
+
 from agent_reach.research.models import EvidenceItem
 from agent_reach.research.planner import ResearchPlan, ResearchQuestion
 from agent_reach.research.runner import ResearchRun
-import json
-
 from agent_reach.research.serialization import serialize_run
 
 

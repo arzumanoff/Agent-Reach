@@ -6,8 +6,8 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from agent_reach.channels.arxiv import ArxivChannel
-from agent_reach.channels.hackernews import HackerNewsChannel
 from agent_reach.channels.google_images import GoogleImagesChannel
+from agent_reach.channels.hackernews import HackerNewsChannel
 from agent_reach.config import Config
 
 from .runner import SearchFn

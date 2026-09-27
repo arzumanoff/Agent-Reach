@@ -6,10 +6,10 @@ from collections.abc import Mapping
 
 from .corroboration import link_exact_claims
 from .models import SourceKind
+from .planner import ResearchPlan
 from .policy import PolicyResult, evaluate_policy
 from .report import render_markdown
 from .runner import ResearchRun, SearchFn
-from .planner import ResearchPlan
 
 
 def execute_research(
