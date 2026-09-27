@@ -24,13 +24,14 @@ class EvidenceStore:
         return self._items.get(evidence_id)
 
     def all(self) -> list[EvidenceItem]:
-        return list(self._items.values())
+        """Return evidence in deterministic ID order."""
+        return [self._items[key] for key in sorted(self._items)]
 
     def by_source(self) -> dict[str, list[EvidenceItem]]:
         grouped: dict[str, list[EvidenceItem]] = defaultdict(list)
-        for item in self._items.values():
+        for item in self.all():
             grouped[item.source].append(item)
-        return dict(grouped)
+        return dict(sorted(grouped.items()))
 
     def __len__(self) -> int:
         return len(self._items)
