@@ -546,7 +546,7 @@ class TestOrchestrator:
                     child.unlink()
                 self.path.rmdir()
 
-        def fake_download(source, out_dir):
+        def fake_download(source, out_dir, **kwargs):
             assert Path(out_dir) == tmp_path / "auto-work"
             audio = Path(out_dir) / "source.m4a"
             audio.write_bytes(b"audio")
@@ -582,7 +582,7 @@ class TestOrchestrator:
         fake_config.set("groq_api_key", "gsk_test")
         work = tmp_path / "caller-owned"
 
-        def fake_download(source, out_dir):
+        def fake_download(source, out_dir, **kwargs):
             audio = Path(out_dir) / "source.m4a"
             audio.write_bytes(b"audio")
             return audio
@@ -906,3 +906,64 @@ class TestConfigOpenAIWhisper:
         assert not fake_config.is_configured("openai_whisper")
         fake_config.set("openai_api_key", "sk-test")
         assert fake_config.is_configured("openai_whisper")
+
+
+@pytest.mark.parametrize(
+    ("url", "expects_cookie"),
+    [
+        ("https://www.youtube.com/watch?v=123", True),
+        ("https://youtu.be/123", True),
+        ("https://example.com/video", False),
+    ],
+)
+def test_transcribe_only_forwards_youtube_cookies_to_youtube_urls(
+    monkeypatch,
+    fake_config,
+    tmp_path,
+    bounded_audio_duration,
+    url,
+    expects_cookie,
+):
+    fake_config.set("groq_api_key", "gsk_test")
+    fake_config.set("youtube_cookies_from", "Chrome + basictext : Profile 2")
+    work = tmp_path / "cookie-scope"
+    captured = {}
+
+    def fake_download(source, out_dir, **kwargs):
+        captured.update(source=source, kwargs=kwargs)
+        audio = Path(out_dir) / "source.m4a"
+        audio.write_bytes(b"audio")
+        return audio
+
+    def fake_compress(src, out_dir):
+        compressed = Path(out_dir) / "compressed.m4a"
+        compressed.write_bytes(b"x" * 1024)
+        return compressed
+
+    monkeypatch.setattr(tr, "download_audio", fake_download)
+    monkeypatch.setattr(tr, "compress_audio", fake_compress)
+    monkeypatch.setattr(
+        tr.requests,
+        "post",
+        lambda *a, **k: FakeResponse(200, "transcript text"),
+    )
+
+    tr.transcribe(url, out_dir=work, config=fake_config)
+
+    if expects_cookie:
+        assert captured["kwargs"]["cookies_from_browser"] == "Chrome + basictext : Profile 2"
+    else:
+        assert captured["kwargs"]["cookies_from_browser"] is None
+
+
+def test_cookie_source_normalizes_browser_keyring_and_profile():
+    assert (
+        tr.youtube_cookie_source("Chrome + basictext : Profile 2")
+        == "chrome+BASICTEXT:Profile 2"
+    )
+
+
+@pytest.mark.parametrize("source", ["netscape", "chrome+not_a_keyring"])
+def test_cookie_source_rejects_unsupported_values(source):
+    with pytest.raises(tr.TranscribeError):
+        tr.youtube_cookie_source(source)
