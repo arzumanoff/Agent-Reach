@@ -40,6 +40,12 @@ def test_empty_claim_is_rejected():
 
 
 def test_identity_normalization_keeps_id_stable():
-    a = EvidenceItem(source="web", canonical_url="HTTPS://EXAMPLE.TEST/A", claim="Fact")
+    a = EvidenceItem(source="web", canonical_url="HTTPS://EXAMPLE.TEST/a", claim="Fact")
     b = EvidenceItem(source="web", canonical_url="https://example.test/a", claim=" fact ")
     assert a.evidence_id == b.evidence_id
+
+
+def test_url_path_case_remains_significant():
+    a = EvidenceItem(source="web", canonical_url="https://example.test/A", claim="Fact")
+    b = EvidenceItem(source="web", canonical_url="https://example.test/a", claim="Fact")
+    assert a.evidence_id != b.evidence_id
