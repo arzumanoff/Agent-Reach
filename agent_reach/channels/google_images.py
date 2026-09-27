@@ -58,8 +58,8 @@ class GoogleImagesChannel(Channel):
         except urllib.error.HTTPError as exc:
             raise ValueError(f"Google image search HTTP {exc.code}") from None
         except urllib.error.URLError as exc:
-            reason = type(exc.reason).__name__
-            raise ValueError(f"Google image search transport failure: {reason}") from None
+            raise ValueError("Google image search transport failure") from None
+
         if len(raw) > _MAX_BYTES:
             raise ValueError("Google image response exceeds safety limit")
 
