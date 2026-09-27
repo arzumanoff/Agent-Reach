@@ -35,3 +35,14 @@ def test_plan_rejects_duplicate_question_text():
                 ResearchQuestion("same"),
             ),
         )
+
+
+def test_plan_rejects_duplicate_question_texts():
+    with pytest.raises(ValueError, match="unique"):
+        ResearchPlan(
+            topic="x",
+            questions=(
+                ResearchQuestion("Same question"),
+                ResearchQuestion(" same QUESTION "),
+            ),
+        )
