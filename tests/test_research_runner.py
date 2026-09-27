@@ -29,3 +29,14 @@ def test_runner_turns_source_failure_into_coverage_gap():
     run = ResearchRun(plan)
     assert len(run.collect({"web": broken})) == 0
     assert run.coverage_gaps == ["web: TimeoutError"]
+
+
+def test_runner_tracks_attempted_and_successful_queries():
+    plan = ResearchPlan(topic="test", questions=(ResearchQuestion("query", ("ok", "empty")),))
+    run = ResearchRun(plan)
+    run.collect({
+        "ok": lambda q, n: [{"id": "1", "title": "x", "text": "claim"}],
+        "empty": lambda q, n: [],
+    })
+    assert run.attempted_queries == 2
+    assert run.successful_queries == 1
