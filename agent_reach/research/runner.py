@@ -21,6 +21,7 @@ class ResearchRun:
     coverage_gaps: list[str] = field(default_factory=list)
     attempted_queries: int = 0
     successful_queries: int = 0
+    discarded_results: int = 0
     question_evidence: dict[str, set[str]] = field(default_factory=dict)
 
     def collect(
@@ -54,14 +55,30 @@ class ResearchRun:
                     )
                     continue
 
-                self.successful_queries += 1
+                accepted = 0
                 for result in results:
-                    evidence_id = self.store.add(
-                        evidence_from_result(
+                    try:
+                        item = evidence_from_result(
                             source,
                             result,
                             source_kind=kinds.get(source, SourceKind.UNKNOWN),
                         )
-                    )
+                    except (TypeError, ValueError) as exc:
+                        self.discarded_results += 1
+                        self.coverage_gaps.append(
+                            f"{question.text} :: {source}: discarded "
+                            f"{type(exc).__name__}"
+                        )
+                        continue
+                    evidence_id = self.store.add(item)
                     evidence_ids.add(evidence_id)
+                    accepted += 1
+
+                if accepted:
+                    self.successful_queries += 1
+                else:
+                    self.coverage_gaps.append(
+                        f"{question.text} :: {source}: no usable results"
+                    )
+
         return self.store
