@@ -79,3 +79,38 @@ agent-reach-research run.json -o report-replayed.md
 Use the snapshot as the audit artifact for important investigations. A replay must preserve
 evidence IDs, provenance, source kinds, typed artifacts, coverage gaps, query metrics, and
 question-to-evidence links.
+
+
+## CLI workflow
+
+Prepare a plan document:
+
+```json
+{
+  "topic": "GPU memory modification",
+  "questions": [
+    {
+      "text": "Is 32 GB physically demonstrated?",
+      "preferred_sources": ["arxiv", "hackernews", "duckduckgo", "google_images"],
+      "require_primary_source": true
+    }
+  ],
+  "minimum_independent_sources": 2,
+  "max_results_per_source": 5
+}
+```
+
+Execute against currently available structured backends and save both outputs:
+
+```bash
+agent-reach-research plan.json --live -o report.md --save-json run.json
+```
+
+Replay later without network access:
+
+```bash
+agent-reach-research run.json -o replayed-report.md
+```
+
+The replay document preserves evidence IDs, provenance, coverage gaps, query counters,
+discarded records and question-to-evidence links.
