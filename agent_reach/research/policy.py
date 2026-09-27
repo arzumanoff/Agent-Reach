@@ -99,8 +99,11 @@ def evaluate_policy(
         question for question in plan.questions if question.require_primary_source
     ]
     if question_evidence is None:
-        if required_primary_questions and not primary_identities:
-            reasons.append("plan requires primary-source evidence but none was collected")
+        if not primary_identities:
+            for question in required_primary_questions:
+                reasons.append(
+                    f"question {question.text!r} requires primary-source evidence"
+                )
     else:
         for question in required_primary_questions:
             ids = question_evidence.get(question.text, set())
