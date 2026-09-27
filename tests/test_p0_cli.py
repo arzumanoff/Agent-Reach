@@ -1396,3 +1396,42 @@ def test_uninstall_preserves_mcporter_entries_without_agent_reach_provenance(
     output = capsys.readouterr().out
     assert not any("remove" in call for call in calls)
     assert "来源无法证明" in output
+
+
+def test_youtube_cookie_source_is_validated(monkeypatch, capsys):
+    import agent_reach.config as config_module
+
+    config = _MemoryConfig()
+    monkeypatch.setattr(config_module, "Config", lambda: config)
+    monkeypatch.setattr(cli, "_configure_logging", lambda _verbose=False: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["agent-reach", "configure", "youtube-cookies", "Chrome + basictext : Profile 2"],
+    )
+
+    cli.main()
+
+    assert config.data["youtube_cookies_from"] == "chrome+BASICTEXT:Profile 2"
+    output = capsys.readouterr().out
+    assert "agent-reach transcribe" in output
+
+
+def test_youtube_cookie_source_rejects_invalid_browser(monkeypatch, capsys):
+    import agent_reach.config as config_module
+
+    config = _MemoryConfig()
+    monkeypatch.setattr(config_module, "Config", lambda: config)
+    monkeypatch.setattr(cli, "_configure_logging", lambda _verbose=False: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["agent-reach", "configure", "youtube-cookies", "netscape"],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
+
+    assert exc.value.code == 2
+    assert "youtube_cookies_from" not in config.data
+    assert "unsupported YouTube cookie browser" in capsys.readouterr().err
