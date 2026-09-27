@@ -37,7 +37,43 @@ def serialize_run(run: ResearchRun) -> dict[str, Any]:
     }
 
 
+def _nonnegative_int(payload: dict[str, Any], key: str) -> int:
+    try:
+        value = int(payload.get(key, 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"serialized research field {key!r} must be an integer") from exc
+    if value < 0:
+        raise ValueError(f"serialized research field {key!r} must be non-negative")
+    return value
+
+
+def _string_tuple(raw: Any, label: str) -> tuple[str, ...]:
+    if raw is None:
+        return ()
+    if not isinstance(raw, (list, tuple)):
+        raise ValueError(f"{label} must be a list")
+    return tuple(str(value) for value in raw)
+
+
+def _artifact_from_payload(raw: Any) -> ArtifactRef:
+    if not isinstance(raw, dict):
+        raise ValueError("serialized artifact must be an object")
+    try:
+        kind = ArtifactKind(raw.get("kind"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("serialized artifact has invalid kind") from exc
+    return ArtifactRef(
+        kind=kind,
+        locator=str(raw.get("locator", "")),
+        source=str(raw.get("source", "")),
+        description=raw.get("description"),
+        content_hash=raw.get("content_hash"),
+    )
+
+
 def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
+    if not isinstance(payload, dict):
+        raise ValueError("serialized research run must be an object")
     if payload.get("schema_version") != 1:
         raise ValueError("unsupported research schema version")
 
@@ -49,33 +85,56 @@ def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
     if not isinstance(raw_questions, list):
         raise ValueError("serialized research plan has invalid questions")
 
-    questions = tuple(
-        ResearchQuestion(
-            text=str(question["text"]),
-            preferred_sources=tuple(question.get("preferred_sources", ())),
-            require_primary_source=bool(question.get("require_primary_source", False)),
+    questions: list[ResearchQuestion] = []
+    for question in raw_questions:
+        if not isinstance(question, dict) or "text" not in question:
+            raise ValueError("serialized research question must be an object with text")
+        questions.append(
+            ResearchQuestion(
+                text=str(question["text"]),
+                preferred_sources=_string_tuple(
+                    question.get("preferred_sources", ()),
+                    "preferred_sources",
+                ),
+                require_primary_source=bool(
+                    question.get("require_primary_source", False)
+                ),
+            )
         )
-        for question in raw_questions
-        if isinstance(question, dict)
-    )
+
     plan = ResearchPlan(
         topic=str(raw_plan.get("topic", "")),
-        questions=questions,
+        questions=tuple(questions),
         max_results_per_source=int(raw_plan.get("max_results_per_source", 10)),
         minimum_independent_sources=int(
             raw_plan.get("minimum_independent_sources", 2)
         ),
-        notes=tuple(raw_plan.get("notes", ())),
+        notes=_string_tuple(raw_plan.get("notes", ()), "plan notes"),
     )
 
-    items: list[EvidenceItem] = []
     raw_evidence = payload.get("evidence", [])
     if not isinstance(raw_evidence, list):
         raise ValueError("serialized research evidence must be a list")
 
+    items: list[EvidenceItem] = []
     for raw in raw_evidence:
         if not isinstance(raw, dict):
-            continue
+            raise ValueError("serialized evidence item must be an object")
+
+        raw_metadata = raw.get("metadata", {})
+        if not isinstance(raw_metadata, dict):
+            raise ValueError("serialized evidence metadata must be an object")
+
+        raw_artifacts = raw.get("artifact_refs", ())
+        if not isinstance(raw_artifacts, (list, tuple)):
+            raise ValueError("serialized artifact_refs must be a list")
+
+        try:
+            source_kind = SourceKind(raw.get("source_kind", "unknown"))
+            state = EvidenceState(raw.get("state", "unverified"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("serialized evidence has invalid enum value") from exc
+
         items.append(
             EvidenceItem(
                 source=str(raw.get("source", "")),
@@ -85,42 +144,54 @@ def deserialize_run(payload: dict[str, Any]) -> ResearchRun:
                 title=raw.get("title"),
                 author=raw.get("author"),
                 published_at=raw.get("published_at"),
-                source_kind=SourceKind(raw.get("source_kind", "unknown")),
-                state=EvidenceState(raw.get("state", "unverified")),
+                source_kind=source_kind,
+                state=state,
                 artifact_refs=tuple(
-                    ArtifactRef(
-                        kind=ArtifactKind(artifact.get("kind")),
-                        locator=str(artifact.get("locator", "")),
-                        source=str(artifact.get("source", "")),
-                        description=artifact.get("description"),
-                        content_hash=artifact.get("content_hash"),
-                    )
-                    for artifact in raw.get("artifact_refs", ())
-                    if isinstance(artifact, dict)
+                    _artifact_from_payload(artifact)
+                    for artifact in raw_artifacts
                 ),
-                corroborates=tuple(raw.get("corroborates", ())),
-                contradicts=tuple(raw.get("contradicts", ())),
+                corroborates=_string_tuple(
+                    raw.get("corroborates", ()),
+                    "evidence corroborates",
+                ),
+                contradicts=_string_tuple(
+                    raw.get("contradicts", ()),
+                    "evidence contradicts",
+                ),
                 backend=raw.get("backend"),
                 retrieved_at=str(raw.get("retrieved_at", "")),
-                metadata=dict(raw.get("metadata", {})),
+                metadata=dict(raw_metadata),
             )
         )
+
+    raw_gaps = payload.get("coverage_gaps", ())
+    if not isinstance(raw_gaps, (list, tuple)):
+        raise ValueError("serialized coverage_gaps must be a list")
 
     run = ResearchRun(
         plan=plan,
         store=EvidenceStore(items),
-        coverage_gaps=list(payload.get("coverage_gaps", ())),
-        attempted_queries=int(payload.get("attempted_queries", 0)),
-        successful_queries=int(payload.get("successful_queries", 0)),
-        discarded_results=int(payload.get("discarded_results", 0)),
+        coverage_gaps=[str(gap) for gap in raw_gaps],
+        attempted_queries=_nonnegative_int(payload, "attempted_queries"),
+        successful_queries=_nonnegative_int(payload, "successful_queries"),
+        discarded_results=_nonnegative_int(payload, "discarded_results"),
     )
 
+    if run.successful_queries > run.attempted_queries:
+        raise ValueError("successful_queries cannot exceed attempted_queries")
+
     raw_question_evidence = payload.get("question_evidence", {})
-    if isinstance(raw_question_evidence, dict):
-        run.question_evidence = {
-            str(question): {str(evidence_id) for evidence_id in ids}
-            for question, ids in raw_question_evidence.items()
-            if isinstance(ids, list)
-        }
+    if not isinstance(raw_question_evidence, dict):
+        raise ValueError("serialized question_evidence must be an object")
+
+    known_ids = {item.evidence_id for item in run.store.all()}
+    for question, ids in raw_question_evidence.items():
+        if not isinstance(ids, list):
+            raise ValueError("serialized question evidence IDs must be a list")
+        normalized_ids = {str(evidence_id) for evidence_id in ids}
+        unknown_ids = normalized_ids - known_ids
+        if unknown_ids:
+            raise ValueError("serialized question_evidence references unknown evidence")
+        run.question_evidence[str(question)] = normalized_ids
 
     return run
