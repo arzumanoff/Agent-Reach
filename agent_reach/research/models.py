@@ -6,7 +6,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
-from typing import Any\nfrom urllib.parse import urlsplit, urlunsplit\n
+from typing import Any
+from urllib.parse import urlsplit, urlunsplit
+
 
 class EvidenceState(str, Enum):
     CONFIRMED = "confirmed"
