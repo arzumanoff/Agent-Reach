@@ -145,6 +145,8 @@ class HackerNewsChannel(Channel):
         ids = _get_json(f"{_FIREBASE_BASE}/{kind}stories.json") or []
         if not isinstance(ids, list):
             raise ValueError("Hacker News story list returned invalid JSON shape")
+        if not isinstance(ids, list):
+            raise ValueError("Hacker News story list returned invalid JSON shape")
         limit = max(0, min(int(limit), 100))
         results = []
         for item_id in ids[:limit]:
@@ -259,6 +261,9 @@ class HackerNewsChannel(Channel):
         query = query.strip()
         limit = max(1, min(int(limit), 100))
 
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query must not be empty")
+        limit = max(1, min(int(limit), 100))
         if sort == "relevance":
             endpoint = "search"
         elif sort == "date":
