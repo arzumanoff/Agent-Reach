@@ -32,8 +32,8 @@ def render_markdown(run: ResearchRun) -> str:
         "",
         f"- Total: {summary['total']}",
     ]
-    for state in EvidenceState:
-        lines.append(f"- {state.value}: {summary[state.value]}")
+    for summary_state in EvidenceState:
+        lines.append(f"- {summary_state.value}: {summary[summary_state.value]}")
 
     policy = evaluate_policy(run.plan, run.store, run.question_evidence or None)
     lines.extend(["", "## Coverage policy", ""])
@@ -62,12 +62,12 @@ def render_markdown(run: ResearchRun) -> str:
 
     lines.extend(["", "## Evidence", ""])
     for item in run.store.all():
-        state = derive_state(item, run.store).value
+        item_state = derive_state(item, run.store).value
         title = item.title or item.source_id or item.source
         provenance = item.canonical_url or item.source_id or "no stable locator"
         lines.extend(
             [
-                f"### [{state}] {title}",
+                f"### [{item_state}] {title}",
                 "",
                 item.claim,
                 "",
