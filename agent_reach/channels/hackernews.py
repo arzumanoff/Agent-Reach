@@ -176,8 +176,12 @@ class HackerNewsChannel(Channel):
           children）
         """
         data = _get_json(f"{_ALGOLIA_BASE}/items/{_path_segment(item_id)}")
-        if not isinstance(data, dict) or not data:
-            raise ValueError(f"Hacker News item not found or invalid: {item_id}")
+        if data is None:
+            raise ValueError(f"Hacker News item not found: {item_id}")
+        if not isinstance(data, dict):
+            raise ValueError("Hacker News item returned invalid JSON shape")
+        if not data:
+            raise ValueError(f"Hacker News item not found: {item_id}")
         comments: list = []
         children = data.get("children") or []
         if not isinstance(children, list):
@@ -228,8 +232,12 @@ class HackerNewsChannel(Channel):
           username, karma, about, created, submitted, hn_url
         """
         data = _get_json(f"{_FIREBASE_BASE}/user/{_path_segment(username)}.json")
-        if not isinstance(data, dict) or not data:
-            raise ValueError(f"Hacker News user not found or invalid: {username}")
+        if data is None:
+            raise ValueError(f"Hacker News user not found: {username}")
+        if not isinstance(data, dict):
+            raise ValueError("Hacker News user returned invalid JSON shape")
+        if not data:
+            raise ValueError(f"Hacker News user not found: {username}")
         return {
             "username": data.get("id", username),
             "karma": data.get("karma", 0),
