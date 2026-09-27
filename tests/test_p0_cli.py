@@ -118,7 +118,7 @@ def test_setup_uses_hidden_prompts_for_secrets(monkeypatch, capsys):
     assert groq_secret not in output.err
 
 
-def test_configure_positional_secret_warns_to_use_safe_input(
+def test_configure_positional_secret_is_rejected(
     monkeypatch, capsys
 ):
     import agent_reach.config as config_module
@@ -132,11 +132,13 @@ def test_configure_positional_secret_warns_to_use_safe_input(
         ["agent-reach", "configure", "groq-key", "legacy-secret"],
     )
 
-    cli.main()
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
 
-    assert config.data["groq_api_key"] == "legacy-secret"
+    assert exc.value.code == 2
+    assert "groq_api_key" not in config.data
     error = capsys.readouterr().err
-    assert "deprecated" in error.lower()
+    assert "cannot be passed positionally" in error.lower()
     assert "--stdin" in error
     assert "legacy-secret" not in error
 
