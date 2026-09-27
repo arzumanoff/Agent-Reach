@@ -1402,11 +1402,12 @@ def _read_configure_value(args) -> str:
     if values:
         if getattr(args, "key", None) in _SENSITIVE_CONFIG_KEYS:
             print(
-                "Warning: positional secrets are deprecated because shell history "
-                "and process listings may expose them; omit the value for a hidden "
-                "prompt or use --stdin.",
+                "Sensitive configure values cannot be passed positionally because "
+                "shell history and process listings may expose them; omit the value "
+                "for a hidden prompt or use --stdin.",
                 file=sys.stderr,
             )
+            raise SystemExit(2)
         return " ".join(values)
 
     try:
